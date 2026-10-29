@@ -1,0 +1,23 @@
+# Install once with: cd backend && uv run pre-commit install --config ../.pre-commit-config.yaml
+# Hooks run the tools pinned in backend/uv.lock, so local results match CI.
+repos:
+  - repo: local
+    hooks:
+      - id: ruff-check
+        name: ruff check
+        entry: uv run --project backend ruff check --fix backend
+        language: system
+        types: [python]
+        pass_filenames: false
+      - id: ruff-format
+        name: ruff format
+        entry: uv run --project backend ruff format backend
+        language: system
+        types: [python]
+        pass_filenames: false
+      - id: mypy
+        name: mypy
+        entry: bash -c 'cd backend && uv run mypy app tests examples migrations/env.py'
+        language: system
+        types: [python]
+        pass_filenames: false

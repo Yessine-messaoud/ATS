@@ -5,25 +5,26 @@ A phase is complete when its **Done when** line is true.
 
 ## Phase 0 — Foundations
 
-- [ ] `git init`, first commit, push to GitHub
-- [ ] Fix `.gitignore`: add `!.env.example` (A§3.1-3)
-- [ ] Create a Python 3.12 environment with `uv`. Replace `requirements.txt` with `pyproject.toml` + `uv.lock` and raise the pins (pydantic ≥ 2.11) (A§3.1-1)
-- [ ] Add ruff + mypy + pytest config and pre-commit hooks
-- [ ] `app/config.py` with `pydantic-settings`. Compose reads its credentials from `.env` (A§3.1-4)
-- [ ] Remove `version:` from `docker-compose.yml`, switch the image to `pgvector/pgvector:pg16`, and add a backend Dockerfile and service
-- [ ] Fix the quick start in `docs/README.md` (`cd ..` is the wrong directory)
-- [ ] GitHub Actions: lint, type-check and tests on every PR
-- [ ] **Models v2** (A§3.2):
-  - [ ] Replace the 11 skill buckets with `skills: list[Skill]` + `category`
-  - [ ] Add a `LanguageLevel` CEFR enum (A1–C2, native) and use it for both candidate and job
-  - [ ] Split `ProficiencyLevel` (skills) from language levels
-  - [ ] Add `confidence` and `verified` to extracted items
-  - [ ] Add `id`, `created_at`, `schema_version`, and move `raw_text` out of the profile
-  - [ ] Validators: `min_length=1` on names, finite floats (reject `inf`), ISO 4217 upper-case currency, URL validation (reuse `UrlModel`), check `duration_months` against dates
-  - [ ] Remove the duplicate job fields (`travel`/`travel_requirements`, `country`) and separate contract type from schedule
-  - [ ] Remove unused imports
-  - [ ] Write tests for every probe in A§3.2
-- [ ] SQLAlchemy models (Candidate, Job, Application, Match, Document, AuditLog) + first Alembic migration
+- [x] `git init` + baseline commit
+- [ ] Create the GitHub repo and push (needs a remote — owner decision)
+- [x] Fix `.gitignore`: add `!.env.example` (A§3.1-3)
+- [x] Create a Python 3.12 environment with `uv`. Replace `requirements.txt` with `pyproject.toml` + `uv.lock` and raise the pins (pydantic ≥ 2.11) (A§3.1-1)
+- [x] Add ruff + mypy + pytest config and pre-commit hooks
+- [x] `app/config.py` with `pydantic-settings`. Compose reads its credentials from `.env` (A§3.1-4)
+- [x] Remove `version:` from `docker-compose.yml`, switch the image to `pgvector/pgvector:pg16`, and add a backend Dockerfile and service
+- [x] Fix the quick start in `docs/README.md` (`cd ..` is the wrong directory)
+- [x] GitHub Actions: lint, type-check and tests on every PR
+- [x] **Models v2** (A§3.2):
+  - [x] Replace the 11 skill buckets with `skills: list[Skill]` + `category`
+  - [x] Add a `LanguageLevel` CEFR enum (A1–C2, native) and use it for both candidate and job
+  - [x] Split `ProficiencyLevel` (skills) from language levels
+  - [x] Add `confidence` and `verified` to extracted items
+  - [x] `schema_version` on profiles; `id`/timestamps on DB records (profiles are the LLM schema); `raw_text` moved to `DocumentRecord`
+  - [x] Validators: `min_length=1` on names, finite floats (reject `inf`), ISO 4217 upper-case currency, URL validation (reuse `UrlModel`), check `duration_months` against dates
+  - [x] Remove the duplicate job fields (`travel`/`travel_requirements`, `country`) and separate contract type from schedule
+  - [x] Remove unused imports
+  - [x] Write tests for every probe in A§3.2
+- [x] SQLAlchemy models (Candidate, Job, Application, Match, Document, AuditLog) + first Alembic migration
 
 **Done when:** a fresh clone works with `uv sync && pytest && docker compose up` and CI is green.
 

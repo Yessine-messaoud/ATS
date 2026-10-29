@@ -1,16 +1,31 @@
 # Canonical profile models
 
-The backend models in `backend/app/models` are deliberately independent from FastAPI routes and SQLAlchemy persistence models.
+The backend models in `backend/app/models` are deliberately independent from FastAPI routes and SQLAlchemy persistence records (`backend/app/db`).
 
 ## Design decisions
 
-- `CandidateProfile` and `JobProfile` use canonical English field names, while `raw_name`, `raw`, `evidence`, `source_language`, and `raw_text` preserve extraction context.
-- Unknown scalar values are `None`; collections default to empty lists. Explicit booleans therefore remain distinct from an unstated value.
-- Candidate skills are grouped for practical extraction, but every item is the reusable `Skill` model. Job skills use `SkillRequirement.requirement` to preserve required versus preferred semantics.
-- Dates, numeric experience, and salary ranges receive only lightweight consistency checks. Skill normalization, embeddings, ranking, and matching stay in separate services.
-- `EmailStr` validates syntax but does not verify mailbox ownership. URLs in identity are retained as strings because source-specific profile URLs can require additional policy later.
+- `CandidateProfile` and `JobProfile` use canonical English field names. `raw_name`, `raw`, `evidence` and `source_language` preserve extraction context.
+- **The profiles are the LLM structured-output schema.** They therefore contain no persistence fields (no `id`, no timestamps). Each profile carries a `schema_version` ("2"). IDs, timestamps and the raw source text live on the database records.
+- **Raw text is kept out of profiles.** It is stored only on `DocumentRecord`, so it can be purged under the retention policy without touching structured data.
+- Unknown scalar values are `None`, and collections default to empty lists, so an explicit `False` stays distinct from "not stated".
+- **One skill list.** Candidate skills live in a single `skills: list[Skill]`, grouped by the `SkillCategory` enum. Job skills use `SkillRequirement.requirement` to keep required and preferred apart.
+- **Traceability.** Every extracted item (skill, experience, education, project, certification, language, requirement) inherits `Evidenced`:
+  - `evidence`: the exact source text;
+  - `confidence`: a value in [0, 1];
+  - `verified`: `None` until the evidence verifier has checked that the quote exists in the source document.
+- **Shared levels.** `SkillLevel` (beginner to expert) is used for skills and `LanguageLevel` (CEFR A1–C2, plus native) for languages, on both the candidate and the job side, so they can be compared directly.
+- **Contract and schedule are separate.** `ContractType` (permanent, internship, freelance, ...) is independent from `WorkSchedule` (full-time or part-time).
+- **Validation rules:**
+  - names are non-empty;
+  - year counts are finite and non-negative;
+  - URLs must be absolute http(s);
+  - currencies must be valid ISO 4217 codes and are upper-cased;
+  - date ranges must be ordered;
+  - a stated `duration_months` must match the dates within 2 months;
+  - extra keys are rejected (`extra="forbid"`), which matches strict structured outputs.
+- `EmailStr` validates syntax but does not verify mailbox ownership.
 
-Sensitive or unreliable fields intentionally excluded include age, date of birth, gender, ethnicity, religion, marital status, photograph, health data, national identifiers, and inferred personality traits. They are irrelevant or risky for fair job matching. Work authorization and visa information are included only as explicit statements because they can be operationally relevant and legally sensitive.
+Sensitive or unreliable fields are intentionally excluded: age, date of birth, gender, ethnicity, religion, marital status, photograph, health data, national identifiers and inferred personality traits. They are irrelevant or risky for fair job matching. Work authorization and visa information are included only as explicit statements, because they can be operationally relevant and are legally sensitive.
 
 ## Example usage
 
@@ -22,8 +37,8 @@ from app.models import CandidateProfile, JobProfile
 candidate = CandidateProfile.model_validate(llm_candidate_json)
 job = JobProfile.model_validate(llm_job_json)
 
-# Pass validated objects to a separate matching service.
-result = matching_service.compare(candidate, job)
+# JSON schema to send as the LLM structured-output format:
+schema = CandidateProfile.model_json_schema()
 ```
 
-For runnable complete payloads, see `backend/examples/profiles.py`. For validation coverage, see `backend/tests/test_models.py`.
+Full runnable payloads are in `backend/examples/profiles.py`. Validation tests are in `backend/tests/test_models.py`.

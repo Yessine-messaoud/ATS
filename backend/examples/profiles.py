@@ -14,9 +14,17 @@ candidate_payload = {
     "seniority": "mid",
     "total_years_experience": 4,
     "domains": ["data engineering", "fintech"],
-    "programming_languages": [{"name": "Python", "proficiency": "advanced", "evidence": "Built ETL services"}],
-    "databases": [{"name": "PostgreSQL", "years_experience": 3}],
-    "cloud_platforms": [{"name": "Azure"}],
+    "skills": [
+        {
+            "name": "Python",
+            "category": "programming_language",
+            "level": "advanced",
+            "evidence": "Built ETL services",
+            "confidence": 0.95,
+        },
+        {"name": "PostgreSQL", "category": "database", "years_experience": 3},
+        {"name": "Azure", "category": "cloud"},
+    ],
     "experiences": [
         {
             "company": "North Africa Finance",
@@ -26,10 +34,10 @@ candidate_payload = {
             "responsibilities": ["Designed batch and streaming pipelines"],
             "achievements": ["Reduced pipeline failures by 30%"],
             "skills_used": [{"name": "Python"}, {"name": "SQL"}],
-            "domain": ["fintech"],
+            "domains": ["fintech"],
         }
     ],
-    "languages": [{"language": "French", "proficiency": "fluent"}, {"language": "English", "proficiency": "advanced"}],
+    "languages": [{"language": "French", "level": "C2"}, {"language": "English", "level": "C1"}],
     "source_language": "en",
     "source_type": "cv",
 }
@@ -38,6 +46,8 @@ job_payload = {
     "title": "Data Engineer",
     "company": "Example Analytics",
     "department_or_team": "Platform Engineering",
+    "contract_type": "permanent",
+    "schedule": "full_time",
     "seniority": "mid",
     "location": {"city": "Tunis", "country": "Tunisia"},
     "work_mode": "hybrid",
@@ -47,8 +57,10 @@ job_payload = {
         {"name": "SQL", "category": "database", "requirement": "required"},
         {"name": "Spark", "category": "framework", "requirement": "preferred"},
     ],
+    "language_requirements": [{"language": "English", "requirement": "required", "level": "B2"}],
     "responsibilities": ["Build and operate dependable data pipelines"],
     "technical_domains": ["data platforms", "analytics engineering"],
+    "compensation": {"minimum": 3000, "maximum": 4500, "currency": "TND", "period": "month"},
     "benefits": ["Professional development budget"],
     "source_language": "en",
 }
