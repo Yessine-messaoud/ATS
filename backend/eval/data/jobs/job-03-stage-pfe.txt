@@ -1,0 +1,9 @@
+Stage PFE — Développeur Full Stack (React / Spring Boot)
+Sousse — présentiel — 6 mois — à partir de février 2026
+
+Nous accueillons un(e) stagiaire ingénieur(e) en fin d'études pour développer un module de gestion RH.
+
+Compétences requises : Java, Spring Boot, React, Git.
+Compétences souhaitées : TypeScript, Docker, connaissance de la méthodologie Scrum.
+Langues : français courant exigé, anglais technique.
+Stage rémunéré.

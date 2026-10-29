@@ -1,0 +1,17 @@
+Karim Mansour
+Junior Backend Developer — Sousse, Tunisia
+karim.mansour@example.com
+
+EXPERIENCE
+Backend Developer Intern — WebFactory, Sousse (June 2024 – September 2024)
+- Implemented REST endpoints in Node.js with Express and MongoDB.
+- Wrote unit tests with Jest.
+
+EDUCATION
+Bachelor in Computer Science — Higher Institute of Computer Science and Communication Techniques of Hammam Sousse (ISITCom), 2024
+
+SKILLS
+JavaScript, Node.js, Express, MongoDB, Jest, Git
+
+LANGUAGES
+Arabic: native; French: B2; English: B1

@@ -1,0 +1,14 @@
+{
+  "full_name": "Mehdi Jlassi",
+  "email": "mehdi.jlassi@example.com",
+  "total_years_experience": null,
+  "skills": ["Linux", "Bash", "Docker", "Kubernetes", "Helm", "ArgoCD", "Terraform", "Ansible", "AWS", "GitLab CI", "Jenkins", "Prometheus", "Grafana", "Python", "CI/CD", "Infrastructure as Code"],
+  "experiences": [
+    {"company": "Sofrecom Tunisie", "job_title": "Ingénieur DevOps"},
+    {"company": "Vermeg", "job_title": "Lead DevOps"}
+  ],
+  "education": ["INSAT"],
+  "certifications": ["AWS Certified Solutions Architect – Associate", "Certified Kubernetes Administrator"],
+  "languages": {"French": "C1", "English": "C1", "Arabic": "native"},
+  "must_not_contain": ["1992", "Célibataire", "single"]
+}

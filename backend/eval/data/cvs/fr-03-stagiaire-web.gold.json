@@ -1,0 +1,13 @@
+{
+  "full_name": "Nour El Houda Saidi",
+  "email": "nour.saidi@example.com",
+  "total_years_experience": null,
+  "skills": ["React", "TypeScript", "JavaScript", "Angular", "Java", "Spring Boot", "Flutter", "Dart", "Firebase", "Node.js", "MySQL", "Git", "Scrum"],
+  "experiences": [
+    {"company": "Proxym Group", "job_title": "Développeuse web"}
+  ],
+  "education": ["École Nationale d'Ingénieurs de Monastir", "IPEIM"],
+  "certifications": [],
+  "languages": {"Arabic": "native", "French": "C1", "English": "B2"},
+  "must_not_contain": []
+}

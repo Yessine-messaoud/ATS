@@ -1,0 +1,24 @@
+Nour El Houda Saidi
+Étudiante en génie logiciel — recherche stage de fin d'études (PFE)
+Monastir — nour.saidi@example.com
+
+Formation
+Cycle ingénieur en génie logiciel — École Nationale d'Ingénieurs de Monastir (ENIM), 2022 – 2025 (en cours)
+Classes préparatoires MP — IPEIM, 2020 – 2022
+
+Stages
+Stage d'été — Développeuse web, Proxym Group (Sousse), juillet – août 2024
+Développement d'un tableau de bord React + TypeScript consommant une API Spring Boot.
+
+Projets académiques
+Application de covoiturage : Flutter, Firebase.
+Plateforme e-learning : Angular, Node.js, MySQL.
+
+Compétences
+React, TypeScript, JavaScript, Angular, Java, Spring Boot, Flutter, Dart, Firebase, Node.js, MySQL, Git, Scrum
+
+Langues
+Arabe : maternelle | Français : C1 (DELF) | Anglais : B2
+
+Vie associative
+Membre du club IEEE ENIM — organisation d'un hackathon de 120 participants.

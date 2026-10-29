@@ -1,0 +1,18 @@
+Data Engineer (H/F) — CDI — Tunis (hybride, 2 jours de télétravail)
+
+Example Analytics recrute un Data Engineer pour son équipe Plateforme Data.
+
+Missions
+- Concevoir et maintenir des pipelines de données batch et temps réel.
+- Industrialiser les flux avec Airflow et assurer la qualité des données.
+
+Profil recherché
+- Minimum 3 ans d'expérience en data engineering.
+- Maîtrise obligatoire de Python et SQL.
+- Expérience exigée avec Apache Spark.
+- Une expérience sur Azure ou Databricks serait un plus.
+- Connaissance de Kafka souhaitée.
+- Diplôme d'ingénieur ou Master en informatique.
+- Anglais professionnel (B2 minimum) obligatoire.
+
+Rémunération : 3 500 à 4 500 TND brut par mois selon profil.

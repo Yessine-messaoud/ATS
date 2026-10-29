@@ -1,0 +1,26 @@
+MEHDI JLASSI — Ingénieur DevOps
+Tunis — mehdi.jlassi@example.com
+Né le 03/07/1992 — Célibataire
+
+Expérience
+2019 – 2023 : Ingénieur DevOps chez Sofrecom Tunisie
+- Mise en place de pipelines CI/CD GitLab CI pour 25 microservices.
+- Infrastructure as Code avec Terraform et Ansible sur AWS (EC2, EKS, RDS).
+- Supervision avec Prometheus et Grafana ; réduction du MTTR de 40 %.
+
+2023 – aujourd'hui : Lead DevOps chez Vermeg, Tunis
+- Encadrement d'une équipe de 4 ingénieurs.
+- Migration vers Kubernetes et Helm ; mise en place d'ArgoCD.
+
+Formation
+Diplôme d'ingénieur en Réseaux et Télécommunications — INSAT, 2018
+
+Compétences techniques
+Linux, Bash, Docker, Kubernetes, Helm, ArgoCD, Terraform, Ansible, AWS, GitLab CI, Jenkins, Prometheus, Grafana, Python
+
+Certifications
+AWS Certified Solutions Architect – Associate (2021)
+Certified Kubernetes Administrator (CKA), 2022
+
+Langues
+Français (C1), Anglais (C1), Arabe (natif)

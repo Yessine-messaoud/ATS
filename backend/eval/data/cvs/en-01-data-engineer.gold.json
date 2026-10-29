@@ -1,0 +1,14 @@
+{
+  "full_name": "Samira Ben Ali",
+  "email": "samira.benali@example.com",
+  "total_years_experience": null,
+  "skills": ["Python", "SQL", "Apache Spark", "Kafka", "Airflow", "dbt", "PostgreSQL", "SQL Server", "Docker", "Azure Data Factory", "Power BI", "Git"],
+  "experiences": [
+    {"company": "North Africa Finance", "job_title": "Data Engineer"},
+    {"company": "DataWave Consulting", "job_title": "Junior Data Engineer"}
+  ],
+  "education": ["École Nationale d'Ingénieurs de Tunis"],
+  "certifications": ["Azure Data Engineer Associate"],
+  "languages": {"Arabic": "native", "French": "C1", "English": "B2"},
+  "must_not_contain": []
+}

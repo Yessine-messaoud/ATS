@@ -1,0 +1,14 @@
+{
+  "full_name": "Amira Gharbi",
+  "email": "amira.gharbi@example.com",
+  "total_years_experience": null,
+  "skills": ["Power BI", "DAX", "Power Query", "Tableau", "SQL", "SQL Server", "Excel", "Python", "pandas", "Star Schema Modeling"],
+  "experiences": [
+    {"company": "Carrefour Tunisie", "job_title": "Analyste BI"},
+    {"company": "Monoprix Tunisie", "job_title": "Data Analyst"}
+  ],
+  "education": ["Institut Supérieur de Gestion de Tunis", "ISG Tunis"],
+  "certifications": ["Power BI Data Analyst Associate"],
+  "languages": {"Arabic": "native", "French": null, "English": "B2"},
+  "must_not_contain": []
+}

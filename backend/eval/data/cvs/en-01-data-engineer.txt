@@ -1,0 +1,31 @@
+SAMIRA BEN ALI
+Data Engineer
+Tunis, Tunisia | samira.benali@example.com | +216 20 000 000
+linkedin.com/in/samira-ben-ali-example
+
+PROFILE
+Data engineer with 4 years of experience building reliable batch and streaming pipelines for financial services.
+
+EXPERIENCE
+Data Engineer — North Africa Finance, Tunis
+March 2022 – Present
+- Designed batch and streaming pipelines with Apache Spark and Kafka processing 20M events per day.
+- Built ETL services in Python orchestrated with Airflow; reduced pipeline failures by 30%.
+- Modelled the analytics warehouse in PostgreSQL and dbt.
+
+Junior Data Engineer — DataWave Consulting, Tunis
+January 2021 – February 2022
+- Migrated on-premise SQL Server reports to Azure Data Factory and Power BI.
+- Containerised internal tools with Docker.
+
+EDUCATION
+Engineering Degree in Computer Science — École Nationale d'Ingénieurs de Tunis (ENIT), 2020
+
+SKILLS
+Python, SQL, Apache Spark, Kafka, Airflow, dbt, PostgreSQL, SQL Server, Docker, Azure Data Factory, Power BI, Git
+
+CERTIFICATIONS
+Microsoft Certified: Azure Data Engineer Associate (2023)
+
+LANGUAGES
+Arabic: native | French: C1 | English: B2 (TOEIC 850)

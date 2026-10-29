@@ -1,0 +1,10 @@
+{
+  "title": "Développeur Full Stack",
+  "contract_type": "internship",
+  "work_mode": "on_site",
+  "minimum_years": null,
+  "required_skills": ["Java", "Spring Boot", "React", "Git"],
+  "preferred_skills": ["TypeScript", "Docker", "Scrum"],
+  "languages": {"French": null, "English": null},
+  "currency": null
+}

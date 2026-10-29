@@ -1,0 +1,29 @@
+Amira Gharbi
+Analyste BI / Data Analyst
+Ariana, Tunisie — amira.gharbi@example.com — 55 000 000
+
+PROFIL
+Analyste BI avec 3 ans d'expérience dans la grande distribution, orientée tableaux de bord et qualité des données.
+
+EXPÉRIENCES PROFESSIONNELLES
+Analyste BI — Carrefour Tunisie (Groupe UTIC), Tunis
+Septembre 2022 – aujourd'hui
+• Conception de tableaux de bord Power BI pour 40 magasins (DAX, Power Query).
+• Automatisation des extractions SQL Server et des rapports Excel avec Python (pandas).
+
+Data Analyst — Monoprix Tunisie, Tunis
+Octobre 2021 – Août 2022
+• Analyse des ventes et segmentation clients sous Tableau.
+
+FORMATION
+Mastère professionnel en Business Intelligence — Institut Supérieur de Gestion de Tunis (ISG Tunis), 2021
+Licence en informatique de gestion — ISG Tunis, 2019
+
+COMPÉTENCES
+Power BI, DAX, Power Query, Tableau, SQL, SQL Server, Excel, Python, pandas, modélisation en étoile
+
+CERTIFICATIONS
+Microsoft Certified : Power BI Data Analyst Associate (PL-300), 2023
+
+LANGUES
+Arabe : langue maternelle — Français : courant — Anglais : B2

@@ -67,6 +67,7 @@ class JobRecord(IdMixin, TimestampMixin, Base):
     requirements_validated: Mapped[bool] = mapped_column(default=False)
     scoring_weights: Mapped[dict[str, float] | None] = mapped_column(JSONB)
     source_document_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("documents.id", ondelete="SET NULL"))
+    extraction_meta: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
 
     applications: Mapped[list[ApplicationRecord]] = relationship(back_populates="job")
 

@@ -1,0 +1,10 @@
+{
+  "title": "Machine Learning Engineer",
+  "contract_type": "permanent",
+  "work_mode": "remote",
+  "minimum_years": 5,
+  "required_skills": ["Python", "PyTorch", "Docker", "Kubernetes", "Computer Vision"],
+  "preferred_skills": ["ONNX", "TensorRT", "MLflow", "Google Cloud Platform"],
+  "languages": {"English": null},
+  "currency": null
+}

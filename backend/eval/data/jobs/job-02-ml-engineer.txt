@@ -1,0 +1,18 @@
+Machine Learning Engineer — Computer Vision
+Full-time, permanent · Remote (Tunisia-based) · Senior level
+
+About the role
+You will take vision models from research to production for our industrial inspection product.
+
+Requirements
+- 5+ years of experience building and deploying ML models.
+- Strong Python and PyTorch.
+- Production experience with Docker and Kubernetes.
+- Solid background in computer vision (object detection, segmentation).
+
+Nice to have
+- ONNX / TensorRT optimisation.
+- MLflow or similar experiment tracking.
+- Experience on Google Cloud Platform.
+
+Languages: fluent English required; French is a plus.

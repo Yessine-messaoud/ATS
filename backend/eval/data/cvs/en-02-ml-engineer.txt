@@ -1,0 +1,32 @@
+Youssef Trabelsi
+Machine Learning Engineer · Sfax, Tunisia
+youssef.trabelsi@example.com · github.com/ytrabelsi-example
+
+Date of birth: 14/02/1995 · Nationality: Tunisian · Married
+
+Summary
+ML engineer specialised in computer vision, from research prototypes to production APIs.
+
+Work Experience
+Machine Learning Engineer, VisionTech Labs (Sfax) — 09/2021 to present
+• Trained object detection models (YOLO, Faster R-CNN) in PyTorch for quality inspection; mAP +12 points.
+• Served models with FastAPI and ONNX Runtime on Kubernetes (GKE).
+• Set up experiment tracking with MLflow.
+
+Research Intern, CRNS — Centre de Recherche en Numérique de Sfax — 02/2021 to 07/2021
+• Image segmentation with U-Net in TensorFlow; co-authored one workshop paper.
+
+Education
+Master's degree in Artificial Intelligence, University of Sfax (2021)
+
+Technical skills
+Languages: Python, C++
+ML/DL: PyTorch, TensorFlow, scikit-learn, OpenCV
+MLOps: MLflow, Docker, Kubernetes, FastAPI, ONNX Runtime
+Cloud: Google Cloud Platform
+
+Projects
+Plant disease detector — mobile app classifying leaf diseases (TensorFlow Lite), 15k downloads.
+
+Languages
+Arabic (mother tongue), English (fluent), French (B2)

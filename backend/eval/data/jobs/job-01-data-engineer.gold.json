@@ -1,0 +1,10 @@
+{
+  "title": "Data Engineer",
+  "contract_type": "permanent",
+  "work_mode": "hybrid",
+  "minimum_years": 3,
+  "required_skills": ["Python", "SQL", "Apache Spark"],
+  "preferred_skills": ["Azure", "Databricks", "Kafka"],
+  "languages": {"English": "B2"},
+  "currency": "TND"
+}

@@ -23,6 +23,8 @@ services:
     environment:
       APP_ENV: development
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-ats_user}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-ats_db}
+      # Needed for CV/job extraction; without it, extraction endpoints return 503.
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
     ports:
       - '8000:8000'
     depends_on:

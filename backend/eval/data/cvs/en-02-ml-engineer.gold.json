@@ -1,0 +1,14 @@
+{
+  "full_name": "Youssef Trabelsi",
+  "email": "youssef.trabelsi@example.com",
+  "total_years_experience": null,
+  "skills": ["Python", "C++", "PyTorch", "TensorFlow", "scikit-learn", "OpenCV", "MLflow", "Docker", "Kubernetes", "FastAPI", "ONNX Runtime", "Google Cloud Platform", "YOLO", "Faster R-CNN", "U-Net", "TensorFlow Lite", "Computer Vision", "Object Detection", "Image Segmentation"],
+  "experiences": [
+    {"company": "VisionTech Labs", "job_title": "Machine Learning Engineer"},
+    {"company": "CRNS", "job_title": "Research Intern"}
+  ],
+  "education": ["University of Sfax"],
+  "certifications": [],
+  "languages": {"Arabic": "native", "English": null, "French": "B2"},
+  "must_not_contain": ["1995", "Tunisian", "Married"]
+}

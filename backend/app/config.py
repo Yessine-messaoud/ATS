@@ -18,6 +18,19 @@ class Settings(BaseSettings):
     database_url: str = "postgresql+psycopg://localhost:5432/ats_db"
     cors_origins: list[str] = ["http://localhost:3000"]
 
+    # LLM extraction. Credentials are resolved by the Anthropic SDK (ANTHROPIC_API_KEY or an `ant auth login` profile).
+    llm_model: str = "claude-opus-5-5"
+    llm_effort: Literal["low", "medium", "high", "xhigh", "max"] = "medium"
+    llm_max_tokens: int = 16000
+    extraction_max_repairs: int = 2
+
+    # Ingestion limits.
+    max_upload_bytes: int = 10 * 1024 * 1024
+    max_pdf_pages: int = 20
+    min_text_chars_per_page: int = 50
+    ocr_languages: str = "eng+fra"
+    document_retention_days: int = 180
+
 
 @lru_cache
 def get_settings() -> Settings:

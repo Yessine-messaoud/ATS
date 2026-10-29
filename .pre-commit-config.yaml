@@ -17,7 +17,7 @@ repos:
         pass_filenames: false
       - id: mypy
         name: mypy
-        entry: bash -c 'cd backend && uv run mypy app tests examples migrations/env.py'
+        entry: bash -c 'cd backend && uv run mypy app tests examples eval migrations/env.py'
         language: system
         types: [python]
         pass_filenames: false

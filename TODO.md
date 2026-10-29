@@ -30,19 +30,24 @@ A phase is complete when its **Done when** line is true.
 
 ## Phase 1 — Extraction
 
-- [ ] Upload endpoint with MIME check on file bytes, size and page limits, and temp file cleanup
-- [ ] PDF text extraction (PyMuPDF), plus detection of invisible text (colour, size, off-page)
-- [ ] OCR fallback (Tesseract) when the extracted text is too short
-- [ ] Section detector (experience, education, skills…) for FR and EN
-- [ ] `LLMClient` interface + one provider, with structured output from the Pydantic JSON schema
-- [ ] Repair loop: send validation errors back to the LLM (2 retries max)
-- [ ] Partial validation: null out the invalid field and keep the rest of the profile
-- [ ] **Evidence verifier:** fuzzy-match each `evidence` against the source text and set `verified`
-- [ ] Job description → `JobProfile` extraction
-- [ ] Email ingestion: parse MIME and route attachments through the same pipeline
-- [ ] Log the model, prompt version, tokens, cost and latency for each extraction
-- [ ] **Gold set v0:** 15 CVs + 5 jobs annotated by hand (JSON) in `eval/data/`
-- [ ] `eval/extraction.py`: per-field P/R/F1 and hallucination rate, results written to `eval/results/`
+- [x] Upload endpoint with MIME check on file bytes, size and page limits (files are processed in memory, so there are no temp files to clean up)
+- [x] PDF text extraction (PyMuPDF), plus detection of invisible text (white, tiny, transparent, off-page)
+- [x] OCR fallback (Tesseract) when the extracted text is too short. Tesseract is installed in the Docker image; locally the document is flagged `ocr_unavailable` instead
+- [x] Section detector (experience, education, skills…) for FR and EN
+- [x] `LLMClient` interface + Claude provider (`claude-opus-5-5`). The tool schema is generated from the Pydantic model. Not `strict`: the profiles exceed the strict-schema limits, so Pydantic validates instead
+- [x] Repair loop: validation errors are sent back as an error `tool_result` (2 retries max)
+- [x] Partial validation: drop the invalid field or list item and keep the rest of the profile
+- [x] **Evidence verifier:** fuzzy-match each `evidence` (or the item name) against the source text and set `verified`
+- [x] Job description → `JobProfile` extraction, plus `PUT /api/jobs/{id}/requirements` for recruiter validation
+- [x] Email ingestion: parse MIME and route PDF/DOCX attachments through the same pipeline
+- [x] Log the model, prompt version, tokens, latency and request IDs for each extraction (`extraction_meta`), plus an audit log entry
+- [x] Prompt-injection screening (regex FR/EN on visible and hidden text) and document flags shown to the recruiter
+- [x] Duplicate detection by SHA-256 (409 with the existing record id)
+- [x] **Gold set v0:** 6 CVs (3 EN, 3 FR, including 1 adversarial) + 3 jobs in `eval/data/`
+- [ ] Grow the gold set to 15 CVs + 5 jobs, including real anonymised CVs (with consent) and two-column layouts
+- [x] `eval/run_extraction.py`: per-field P/R/F1, unverified (hallucination) rate, sensitive leaks, security flags, cost and latency, written to `eval/results/`
+- [ ] **Run the eval with an API key** and commit the first results file
+- [ ] Move extraction to a background task (uploads currently block while the LLM call runs)
 
 **Done when:** skill extraction F1 is measured and reported on the gold set, and hallucination rate is measured.
 

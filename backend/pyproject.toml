@@ -13,6 +13,10 @@ dependencies = [
     "psycopg[binary]>=3.2",
     "alembic>=1.13",
     "pydantic-extra-types[pycountry]>=2.9",
+    "anthropic>=2.3.0",
+    "pymupdf>=2.0",
+    "rapidfuzz>=3.14.6",
+    "python-multipart>=0.0.32",
 ]
 
 [dependency-groups]
@@ -40,8 +44,17 @@ extend-exclude = ["migrations/versions"]
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
 
+[tool.ruff.lint.per-file-ignores]
+# Maps typographic punctuation on purpose.
+"eval/render.py" = ["RUF001"]
+
 [tool.mypy]
 python_version = "3.12"
 strict = true
 plugins = ["pydantic.mypy"]
 exclude = ["^migrations/"]
+
+[[tool.mypy.overrides]]
+# PyMuPDF ships without type hints.
+module = ["app.ingestion.pdf", "tests.conftest", "eval.render"]
+disallow_untyped_calls = false
