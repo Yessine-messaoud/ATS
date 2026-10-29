@@ -1,0 +1,21 @@
+{
+  "title": "Machine Learning Engineer",
+  "contract_type": "permanent",
+  "schedule": "full_time",
+  "seniority": "senior",
+  "location": {"country": "Tunisia"},
+  "work_mode": "remote",
+  "experience": {"minimum_years": 5, "relevant_domains": ["machine learning", "computer vision"]},
+  "skill_requirements": [
+    {"name": "Python", "requirement": "required"},
+    {"name": "PyTorch", "requirement": "required"},
+    {"name": "Docker", "requirement": "required"},
+    {"name": "Kubernetes", "requirement": "required"},
+    {"name": "Computer Vision", "requirement": "required"},
+    {"name": "ONNX", "requirement": "preferred"},
+    {"name": "TensorRT", "requirement": "preferred"},
+    {"name": "MLflow", "requirement": "preferred"},
+    {"name": "Google Cloud Platform", "requirement": "preferred"}
+  ],
+  "language_requirements": [{"language": "English", "requirement": "required", "level": "C1"}, {"language": "French", "requirement": "preferred"}]
+}

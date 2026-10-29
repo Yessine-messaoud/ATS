@@ -1,0 +1,23 @@
+{
+  "identity": {"full_name": "Youssef Trabelsi", "email": "youssef.trabelsi@example.com", "location": {"city": "Sfax", "country": "Tunisia"}},
+  "professional_title": "Machine Learning Engineer",
+  "skills": [
+    {"name": "Python", "category": "programming_language"}, {"name": "C++", "category": "programming_language"},
+    {"name": "PyTorch", "category": "ai_ml"}, {"name": "TensorFlow", "category": "ai_ml"},
+    {"name": "scikit-learn", "category": "ai_ml"}, {"name": "OpenCV", "category": "ai_ml"},
+    {"name": "MLflow", "category": "ai_ml"}, {"name": "Docker", "category": "devops"},
+    {"name": "Kubernetes", "category": "devops"}, {"name": "FastAPI", "category": "framework"},
+    {"name": "ONNX Runtime", "category": "ai_ml"}, {"name": "Google Cloud Platform", "category": "cloud"},
+    {"name": "Computer Vision", "category": "ai_ml"}, {"name": "Object Detection", "category": "ai_ml"}
+  ],
+  "experiences": [
+    {"company": "VisionTech Labs", "job_title": "Machine Learning Engineer", "dates": {"start_date": "2021-09-01"}, "current": true,
+     "responsibilities": ["Trained object detection models (YOLO, Faster R-CNN) in PyTorch for quality inspection", "Served models with FastAPI and ONNX Runtime on Kubernetes (GKE)", "Set up experiment tracking with MLflow"],
+     "domains": ["computer vision", "industrial inspection"]},
+    {"company": "CRNS", "job_title": "Research Intern", "dates": {"start_date": "2021-02-01", "end_date": "2021-07-01"},
+     "responsibilities": ["Image segmentation with U-Net in TensorFlow"], "domains": ["computer vision"]}
+  ],
+  "education": [{"institution": "University of Sfax", "degree": "Master's degree", "field_of_study": "Artificial Intelligence", "dates": {"end_date": "2021-07-01"}}],
+  "projects": [{"name": "Plant disease detector", "technologies": [{"name": "TensorFlow Lite"}]}],
+  "languages": [{"language": "Arabic", "level": "native"}, {"language": "English"}, {"language": "French", "level": "B2"}]
+}

@@ -53,20 +53,25 @@ A phase is complete when its **Done when** line is true.
 
 ## Phase 2 — Matching & explanation
 
-- [ ] Simple skill normalizer v0 (synonym dictionary + fuzzy match). ESCO comes in Phase 4
-- [ ] Knock-out filters: work authorization, mandatory language, certification, location
-- [ ] Per-dimension scorers in pure functions, each one unit-tested
-- [ ] Skill strength from recency, duration and number of evidence items
-- [ ] Penalty for each missing required skill
-- [ ] Per-job configurable weights
-- [ ] `MatchResult` with all factors, persisted with the engine version
-- [ ] `GET /api/jobs/{id}/ranking`: rank candidates for a job
-- [ ] LLM explanation generated **only from the factors**, plus interview questions for gaps
-- [ ] Faithfulness check: every claim in the explanation must map to a factor
-- [ ] Gold set: candidate×job relevance labels (0–3)
-- [ ] `eval/matching.py`: NDCG@10, Spearman correlation vs human ranking
+- [x] Skill normalizer v0: synonyms, implication graph (PostgreSQL ⟹ SQL, transitive), related-skill partial credit, strict fuzzy matching. ESCO comes in Phase 4
+- [x] Knock-out filters: mandatory language (CEFR), certification, location/relocation, work authorization (always left to the recruiter). Missing information gives `unknown`, never `fail`
+- [x] Per-dimension scorers as pure functions, each unit-tested (required/preferred skills, experience, seniority, languages, education with experience equivalence, location/work mode)
+- [x] Skill strength from professional use (duration), projects, bare listing, and recency; skills mentioned only in experience text are found too. Unverified claims earn no credit
+- [x] Multiplicative penalty for each missing required skill (8% by default)
+- [x] Per-job configurable weights (`PUT /api/jobs/{id}/weights`), normalized over the dimensions that apply
+- [x] `MatchResult` with every factor (stable ids), persisted with the engine version (`POST /api/matches`) plus an audit entry
+- [x] `GET /api/jobs/{id}/ranking`: candidates passing knock-outs, then knocked-out ones listed separately; `blind=true` hides names
+- [x] `GET /api/candidates/{id}/recommendations`: open jobs ranked for a candidate
+- [x] LLM explanation built **only from the factors** (no CV text or personal data), plus interview questions; deterministic template fallback
+- [x] Faithfulness check: claims citing unknown factors, the wrong polarity or numbers absent from the factors are dropped and reported
+- [x] Counterfactual test: name, email, phone and links do not change the result
+- [x] Gold set: 18 candidate×job relevance labels (0–3), written before the engine; matching fixtures in `eval/data/matching/`
+- [x] `eval/run_matching.py`: NDCG@3, NDCG@all, Spearman, top-1 accuracy; regression-guarded in CI. Baseline `match-v1`: NDCG@3 0.972, Spearman 0.816, top-1 3/3
+- [ ] Grow the matching gold set (more jobs and candidates, a second annotator for inter-rater agreement)
+- [ ] Experience relevance is skill-based only; add domain/title similarity (e.g. BI analyst ≠ data engineer despite SQL)
+- [ ] Measure LLM explanation faithfulness (dropped-claim rate) once an API key is available
 
-**Done when:** a job ranks the pool with explanations, and NDCG@10 is reported.
+**Done when:** a job ranks the pool with explanations, and NDCG@10 is reported. *(Done: NDCG@3 and NDCG@all are reported, since the pool has only 6 candidates.)*
 
 ## Phase 3 — ATS UI (Next.js)
 

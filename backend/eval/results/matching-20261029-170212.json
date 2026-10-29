@@ -1,0 +1,233 @@
+{
+  "summary": {
+    "jobs": 3,
+    "candidates": 6,
+    "mean_ndcg@3": 0.972,
+    "mean_ndcg@all": 0.989,
+    "mean_spearman": 0.816,
+    "top1_accuracy": 1.0,
+    "mean_precision@1": 1.0
+  },
+  "jobs": [
+    {
+      "job": "job-01-data-engineer",
+      "ndcg@3": 1.0,
+      "ndcg@all": 1.0,
+      "spearman": 0.926,
+      "top1_is_best": true,
+      "precision@1": 1.0,
+      "ranking": [
+        {
+          "candidate": "en-01-data-engineer",
+          "label": 3,
+          "score": 95.3,
+          "passed_knockouts": true,
+          "missing_required": []
+        },
+        {
+          "candidate": "fr-01-analyste-bi",
+          "label": 1,
+          "score": 61.5,
+          "passed_knockouts": true,
+          "missing_required": [
+            "Apache Spark"
+          ]
+        },
+        {
+          "candidate": "en-02-ml-engineer",
+          "label": 1,
+          "score": 41.4,
+          "passed_knockouts": true,
+          "missing_required": [
+            "SQL",
+            "Apache Spark"
+          ]
+        },
+        {
+          "candidate": "fr-02-devops",
+          "label": 0,
+          "score": 21.6,
+          "passed_knockouts": true,
+          "missing_required": [
+            "SQL",
+            "Apache Spark"
+          ]
+        },
+        {
+          "candidate": "fr-03-stagiaire-web",
+          "label": 0,
+          "score": 19.1,
+          "passed_knockouts": true,
+          "missing_required": [
+            "Python",
+            "Apache Spark"
+          ]
+        },
+        {
+          "candidate": "en-03-adversarial",
+          "label": 0,
+          "score": 6.9,
+          "passed_knockouts": false,
+          "missing_required": [
+            "Python",
+            "SQL",
+            "Apache Spark"
+          ]
+        }
+      ]
+    },
+    {
+      "job": "job-02-ml-engineer",
+      "ndcg@3": 1.0,
+      "ndcg@all": 1.0,
+      "spearman": 0.676,
+      "top1_is_best": true,
+      "precision@1": 1.0,
+      "ranking": [
+        {
+          "candidate": "en-02-ml-engineer",
+          "label": 3,
+          "score": 89.7,
+          "passed_knockouts": true,
+          "missing_required": []
+        },
+        {
+          "candidate": "fr-02-devops",
+          "label": 1,
+          "score": 44.3,
+          "passed_knockouts": true,
+          "missing_required": [
+            "PyTorch",
+            "Computer Vision"
+          ]
+        },
+        {
+          "candidate": "en-01-data-engineer",
+          "label": 0,
+          "score": 44.9,
+          "passed_knockouts": false,
+          "missing_required": [
+            "PyTorch",
+            "Computer Vision"
+          ]
+        },
+        {
+          "candidate": "fr-01-analyste-bi",
+          "label": 0,
+          "score": 29.6,
+          "passed_knockouts": false,
+          "missing_required": [
+            "PyTorch",
+            "Docker",
+            "Kubernetes",
+            "Computer Vision"
+          ]
+        },
+        {
+          "candidate": "en-03-adversarial",
+          "label": 0,
+          "score": 7.1,
+          "passed_knockouts": false,
+          "missing_required": [
+            "Python",
+            "PyTorch",
+            "Docker",
+            "Kubernetes",
+            "Computer Vision"
+          ]
+        },
+        {
+          "candidate": "fr-03-stagiaire-web",
+          "label": 0,
+          "score": 6.0,
+          "passed_knockouts": false,
+          "missing_required": [
+            "Python",
+            "PyTorch",
+            "Docker",
+            "Kubernetes",
+            "Computer Vision"
+          ]
+        }
+      ]
+    },
+    {
+      "job": "job-03-stage-pfe",
+      "ndcg@3": 0.917,
+      "ndcg@all": 0.968,
+      "spearman": 0.845,
+      "top1_is_best": true,
+      "precision@1": 1.0,
+      "ranking": [
+        {
+          "candidate": "fr-03-stagiaire-web",
+          "label": 3,
+          "score": 67.8,
+          "passed_knockouts": true,
+          "missing_required": []
+        },
+        {
+          "candidate": "en-01-data-engineer",
+          "label": 0,
+          "score": 20.7,
+          "passed_knockouts": true,
+          "missing_required": [
+            "Java",
+            "Spring Boot",
+            "React"
+          ]
+        },
+        {
+          "candidate": "fr-02-devops",
+          "label": 0,
+          "score": 19.6,
+          "passed_knockouts": true,
+          "missing_required": [
+            "Java",
+            "Spring Boot",
+            "React"
+          ]
+        },
+        {
+          "candidate": "fr-01-analyste-bi",
+          "label": 0,
+          "score": 9.6,
+          "passed_knockouts": true,
+          "missing_required": [
+            "Java",
+            "Spring Boot",
+            "React",
+            "Git"
+          ]
+        },
+        {
+          "candidate": "en-03-adversarial",
+          "label": 1,
+          "score": 20.9,
+          "passed_knockouts": false,
+          "missing_required": [
+            "Java",
+            "Spring Boot",
+            "React"
+          ]
+        },
+        {
+          "candidate": "en-02-ml-engineer",
+          "label": 0,
+          "score": 9.5,
+          "passed_knockouts": false,
+          "missing_required": [
+            "Java",
+            "Spring Boot",
+            "React",
+            "Git"
+          ]
+        }
+      ]
+    }
+  ],
+  "config": {
+    "engine_version": "match-v1",
+    "eval_date": "2026-10-29"
+  }
+}

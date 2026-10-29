@@ -1,0 +1,28 @@
+{
+  "_scale": "0 = not relevant, 1 = weak (some transferable skills), 2 = good (most requirements, notable gaps), 3 = strong (meets the requirements)",
+  "_method": "Labelled by hand from the CV and job texts, before the scoring engine was written, to avoid fitting labels to the engine.",
+  "job-01-data-engineer": {
+    "en-01-data-engineer": 3,
+    "en-02-ml-engineer": 1,
+    "en-03-adversarial": 0,
+    "fr-01-analyste-bi": 1,
+    "fr-02-devops": 0,
+    "fr-03-stagiaire-web": 0
+  },
+  "job-02-ml-engineer": {
+    "en-01-data-engineer": 0,
+    "en-02-ml-engineer": 3,
+    "en-03-adversarial": 0,
+    "fr-01-analyste-bi": 0,
+    "fr-02-devops": 1,
+    "fr-03-stagiaire-web": 0
+  },
+  "job-03-stage-pfe": {
+    "en-01-data-engineer": 0,
+    "en-02-ml-engineer": 0,
+    "en-03-adversarial": 1,
+    "fr-01-analyste-bi": 0,
+    "fr-02-devops": 0,
+    "fr-03-stagiaire-web": 3
+  }
+}

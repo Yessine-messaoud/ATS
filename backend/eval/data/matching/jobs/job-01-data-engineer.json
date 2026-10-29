@@ -1,0 +1,19 @@
+{
+  "title": "Data Engineer",
+  "contract_type": "permanent",
+  "location": {"city": "Tunis", "country": "Tunisia"},
+  "work_mode": "hybrid",
+  "experience": {"minimum_years": 3, "relevant_domains": ["data engineering"]},
+  "skill_requirements": [
+    {"name": "Python", "requirement": "required"},
+    {"name": "SQL", "requirement": "required"},
+    {"name": "Apache Spark", "requirement": "required"},
+    {"name": "Azure", "requirement": "preferred"},
+    {"name": "Databricks", "requirement": "preferred"},
+    {"name": "Kafka", "requirement": "preferred"},
+    {"name": "Airflow", "requirement": "preferred"}
+  ],
+  "education_requirements": [{"degree": "Diplôme d'ingénieur ou Master", "field_of_study": "Informatique", "requirement": "required"}],
+  "language_requirements": [{"language": "English", "requirement": "required", "level": "B2"}],
+  "compensation": {"minimum": 3500, "maximum": 4500, "currency": "TND", "period": "month"}
+}

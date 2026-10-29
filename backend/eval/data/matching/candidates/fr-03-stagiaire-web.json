@@ -1,0 +1,26 @@
+{
+  "identity": {"full_name": "Nour El Houda Saidi", "email": "nour.saidi@example.com", "location": {"city": "Monastir", "country": "Tunisia"}},
+  "professional_title": "Étudiante en génie logiciel",
+  "seniority": "intern",
+  "skills": [
+    {"name": "React", "category": "framework"}, {"name": "TypeScript", "category": "programming_language"},
+    {"name": "JavaScript", "category": "programming_language"}, {"name": "Angular", "category": "framework"},
+    {"name": "Java", "category": "programming_language"}, {"name": "Spring Boot", "category": "framework"},
+    {"name": "Flutter", "category": "framework"}, {"name": "Dart", "category": "programming_language"},
+    {"name": "Firebase", "category": "cloud"}, {"name": "Node.js", "category": "framework"},
+    {"name": "MySQL", "category": "database"}, {"name": "Git", "category": "tool"}, {"name": "Scrum", "category": "methodology"}
+  ],
+  "experiences": [
+    {"company": "Proxym Group", "job_title": "Développeuse web (stage d'été)", "dates": {"start_date": "2024-07-01", "end_date": "2024-08-31"},
+     "responsibilities": ["Développement d'un tableau de bord React + TypeScript consommant une API Spring Boot"]}
+  ],
+  "education": [
+    {"institution": "École Nationale d'Ingénieurs de Monastir", "degree": "Cycle ingénieur", "field_of_study": "Génie logiciel", "dates": {"start_date": "2022-09-01", "end_date": "2025-07-01"}},
+    {"institution": "IPEIM", "degree": "Classes préparatoires MP", "dates": {"start_date": "2020-09-01", "end_date": "2022-07-01"}}
+  ],
+  "projects": [
+    {"name": "Application de covoiturage", "technologies": [{"name": "Flutter"}, {"name": "Firebase"}]},
+    {"name": "Plateforme e-learning", "technologies": [{"name": "Angular"}, {"name": "Node.js"}, {"name": "MySQL"}]}
+  ],
+  "languages": [{"language": "Arabic", "level": "native"}, {"language": "French", "level": "C1"}, {"language": "English", "level": "B2"}]
+}

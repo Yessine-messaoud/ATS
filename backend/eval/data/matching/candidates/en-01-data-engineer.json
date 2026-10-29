@@ -1,0 +1,24 @@
+{
+  "identity": {"full_name": "Samira Ben Ali", "email": "samira.benali@example.com", "location": {"city": "Tunis", "country": "Tunisia"}},
+  "professional_title": "Data Engineer",
+  "seniority": "mid",
+  "skills": [
+    {"name": "Python", "category": "programming_language"}, {"name": "SQL", "category": "database"},
+    {"name": "Apache Spark", "category": "framework"}, {"name": "Kafka", "category": "tool"},
+    {"name": "Airflow", "category": "tool"}, {"name": "dbt", "category": "tool"},
+    {"name": "PostgreSQL", "category": "database"}, {"name": "SQL Server", "category": "database"},
+    {"name": "Docker", "category": "devops"}, {"name": "Azure Data Factory", "category": "cloud"},
+    {"name": "Power BI", "category": "data_bi"}, {"name": "Git", "category": "tool"}
+  ],
+  "experiences": [
+    {"company": "North Africa Finance", "job_title": "Data Engineer", "dates": {"start_date": "2022-03-01"}, "current": true,
+     "responsibilities": ["Designed batch and streaming pipelines with Apache Spark and Kafka", "Built ETL services in Python orchestrated with Airflow", "Modelled the analytics warehouse in PostgreSQL and dbt"],
+     "domains": ["data engineering", "finance"]},
+    {"company": "DataWave Consulting", "job_title": "Junior Data Engineer", "dates": {"start_date": "2021-01-01", "end_date": "2022-02-01"},
+     "responsibilities": ["Migrated on-premise SQL Server reports to Azure Data Factory and Power BI", "Containerised internal tools with Docker"],
+     "domains": ["data engineering"]}
+  ],
+  "education": [{"institution": "École Nationale d'Ingénieurs de Tunis", "degree": "Engineering Degree", "field_of_study": "Computer Science", "dates": {"end_date": "2020-07-01"}}],
+  "certifications": [{"name": "Microsoft Certified: Azure Data Engineer Associate", "issue_date": "2023-01-01"}],
+  "languages": [{"language": "Arabic", "level": "native"}, {"language": "French", "level": "C1"}, {"language": "English", "level": "B2"}]
+}

@@ -6,10 +6,11 @@ from fastapi import APIRouter, HTTPException, Query, UploadFile, status
 from sqlalchemy import select
 
 from app.db import CandidateRecord
+from app.services.matching import recommend_jobs
 from app.services.profiles import create_candidate_from_upload
 
 from .deps import AppSettings, DbSession, Llm, domain_errors, get_or_404
-from .schemas import CandidateOut
+from .schemas import CandidateOut, RecommendedJobOut
 
 router = APIRouter(prefix="/candidates", tags=["candidates"])
 
@@ -35,3 +36,12 @@ def list_candidates(db: DbSession, limit: int = Query(50, ge=1, le=200)) -> list
 def get_candidate(candidate_id: uuid.UUID, db: DbSession) -> CandidateOut:
     record = get_or_404(lambda: db.get(CandidateRecord, candidate_id), "candidate")
     return CandidateOut.from_record(record)
+
+
+@router.get("/{candidate_id}/recommendations")
+def get_recommendations(
+    candidate_id: uuid.UUID, db: DbSession, limit: int = Query(10, ge=1, le=100)
+) -> list[RecommendedJobOut]:
+    """Open jobs ranked for this candidate (jobs passing knock-outs first)."""
+    record = get_or_404(lambda: db.get(CandidateRecord, candidate_id), "candidate")
+    return [RecommendedJobOut.build(r) for r in recommend_jobs(db, record, limit=limit)]

@@ -1,0 +1,16 @@
+{
+  "title": "Développeur Full Stack (stage PFE)",
+  "contract_type": "internship",
+  "location": {"city": "Sousse", "country": "Tunisia"},
+  "work_mode": "on_site",
+  "skill_requirements": [
+    {"name": "Java", "requirement": "required"},
+    {"name": "Spring Boot", "requirement": "required"},
+    {"name": "React", "requirement": "required"},
+    {"name": "Git", "requirement": "required"},
+    {"name": "TypeScript", "requirement": "preferred"},
+    {"name": "Docker", "requirement": "preferred"},
+    {"name": "Scrum", "requirement": "preferred"}
+  ],
+  "language_requirements": [{"language": "French", "requirement": "required", "level": "C1"}, {"language": "English", "requirement": "preferred"}]
+}

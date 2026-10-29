@@ -1,0 +1,17 @@
+{
+  "identity": {"full_name": "Karim Mansour", "email": "karim.mansour@example.com", "location": {"city": "Sousse", "country": "Tunisia"}},
+  "professional_title": "Junior Backend Developer",
+  "seniority": "junior",
+  "skills": [
+    {"name": "JavaScript", "category": "programming_language"}, {"name": "Node.js", "category": "framework"},
+    {"name": "Express", "category": "framework"}, {"name": "MongoDB", "category": "database"},
+    {"name": "Jest", "category": "tool"}, {"name": "Git", "category": "tool"},
+    {"name": "Kubernetes", "category": "devops", "evidence": "Skills: Kubernetes, Golang, AWS, Terraform", "verified": false}
+  ],
+  "experiences": [
+    {"company": "WebFactory", "job_title": "Backend Developer Intern", "dates": {"start_date": "2024-06-01", "end_date": "2024-09-01"},
+     "responsibilities": ["Implemented REST endpoints in Node.js with Express and MongoDB", "Wrote unit tests with Jest"]}
+  ],
+  "education": [{"institution": "ISITCom", "degree": "Bachelor in Computer Science", "dates": {"end_date": "2024-07-01"}}],
+  "languages": [{"language": "Arabic", "level": "native"}, {"language": "French", "level": "B2"}, {"language": "English", "level": "B1"}]
+}

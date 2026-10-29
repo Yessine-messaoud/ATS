@@ -6,11 +6,13 @@ from fastapi import APIRouter, Query, status
 from sqlalchemy import select
 
 from app.db import JobRecord
+from app.matching import ENGINE_VERSION, ScoringWeights
 from app.models import JobProfile
+from app.services.matching import job_weights, rank_candidates, set_job_weights
 from app.services.profiles import create_job_from_text, validate_job_requirements
 
 from .deps import AppSettings, DbSession, Llm, domain_errors, get_or_404
-from .schemas import JobIn, JobOut
+from .schemas import JobIn, JobOut, RankedCandidateOut, RankingOut
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
 
@@ -40,3 +42,30 @@ def put_job_requirements(job_id: uuid.UUID, profile: JobProfile, db: DbSession) 
     record = get_or_404(lambda: db.get(JobRecord, job_id), "job")
     # TODO(phase-3): use the authenticated recruiter as actor once auth exists.
     return JobOut.from_record(validate_job_requirements(db, record, profile, actor="recruiter"))
+
+
+@router.put("/{job_id}/weights")
+def put_job_weights(job_id: uuid.UUID, weights: ScoringWeights, db: DbSession) -> ScoringWeights:
+    """Set this job's scoring weights (relative; normalized over the dimensions that apply)."""
+    record = get_or_404(lambda: db.get(JobRecord, job_id), "job")
+    return job_weights(set_job_weights(db, record, weights, actor="recruiter"))
+
+
+@router.get("/{job_id}/ranking")
+def get_job_ranking(
+    job_id: uuid.UUID,
+    db: DbSession,
+    limit: int = Query(20, ge=1, le=200),
+    blind: bool = Query(False, description="Hide candidate names (blind screening)."),
+) -> RankingOut:
+    """Rank the candidate pool for a job. Knocked-out candidates are listed separately, never hidden."""
+    record = get_or_404(lambda: db.get(JobRecord, job_id), "job")
+    passed, knocked_out = rank_candidates(db, record, limit=limit)
+    return RankingOut(
+        job_id=record.id,
+        engine_version=ENGINE_VERSION,
+        requirements_validated=record.requirements_validated,
+        weights=job_weights(record),
+        ranked=[RankedCandidateOut.build(r, blind=blind) for r in passed],
+        knocked_out=[RankedCandidateOut.build(r, blind=blind) for r in knocked_out],
+    )

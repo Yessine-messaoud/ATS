@@ -1,0 +1,23 @@
+{
+  "identity": {"full_name": "Mehdi Jlassi", "email": "mehdi.jlassi@example.com", "location": {"city": "Tunis", "country": "Tunisia"}},
+  "professional_title": "Ingénieur DevOps",
+  "seniority": "lead",
+  "skills": [
+    {"name": "Linux", "category": "devops"}, {"name": "Bash", "category": "programming_language"},
+    {"name": "Docker", "category": "devops"}, {"name": "Kubernetes", "category": "devops"},
+    {"name": "Helm", "category": "devops"}, {"name": "ArgoCD", "category": "devops"},
+    {"name": "Terraform", "category": "devops"}, {"name": "Ansible", "category": "devops"},
+    {"name": "AWS", "category": "cloud"}, {"name": "GitLab CI", "category": "devops"},
+    {"name": "Jenkins", "category": "devops"}, {"name": "Prometheus", "category": "devops"},
+    {"name": "Grafana", "category": "devops"}, {"name": "Python", "category": "programming_language"}
+  ],
+  "experiences": [
+    {"company": "Sofrecom Tunisie", "job_title": "Ingénieur DevOps", "dates": {"start_date": "2019-01-01", "end_date": "2023-01-01"},
+     "responsibilities": ["Pipelines CI/CD GitLab CI pour 25 microservices", "Infrastructure as Code avec Terraform et Ansible sur AWS", "Supervision avec Prometheus et Grafana"]},
+    {"company": "Vermeg", "job_title": "Lead DevOps", "dates": {"start_date": "2023-01-01"}, "current": true,
+     "responsibilities": ["Encadrement d'une équipe de 4 ingénieurs", "Migration vers Kubernetes et Helm ; mise en place d'ArgoCD"]}
+  ],
+  "education": [{"institution": "INSAT", "degree": "Diplôme d'ingénieur", "field_of_study": "Réseaux et Télécommunications", "dates": {"end_date": "2018-07-01"}}],
+  "certifications": [{"name": "AWS Certified Solutions Architect – Associate"}, {"name": "Certified Kubernetes Administrator (CKA)"}],
+  "languages": [{"language": "French", "level": "C1"}, {"language": "English", "level": "C1"}, {"language": "Arabic", "level": "native"}]
+}

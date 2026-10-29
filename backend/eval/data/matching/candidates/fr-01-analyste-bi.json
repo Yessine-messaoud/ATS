@@ -1,0 +1,24 @@
+{
+  "identity": {"full_name": "Amira Gharbi", "email": "amira.gharbi@example.com", "location": {"city": "Ariana", "country": "Tunisia"}},
+  "professional_title": "Analyste BI",
+  "skills": [
+    {"name": "Power BI", "category": "data_bi"}, {"name": "DAX", "category": "data_bi"},
+    {"name": "Power Query", "category": "data_bi"}, {"name": "Tableau", "category": "data_bi"},
+    {"name": "SQL", "category": "database"}, {"name": "SQL Server", "category": "database"},
+    {"name": "Excel", "category": "tool"}, {"name": "Python", "category": "programming_language"},
+    {"name": "pandas", "category": "library"}, {"name": "Star Schema Modeling", "category": "methodology"}
+  ],
+  "experiences": [
+    {"company": "Carrefour Tunisie", "job_title": "Analyste BI", "dates": {"start_date": "2022-09-01"}, "current": true,
+     "responsibilities": ["Conception de tableaux de bord Power BI (DAX, Power Query)", "Automatisation des extractions SQL Server et des rapports Excel avec Python (pandas)"],
+     "domains": ["business intelligence", "retail"]},
+    {"company": "Monoprix Tunisie", "job_title": "Data Analyst", "dates": {"start_date": "2021-10-01", "end_date": "2022-08-01"},
+     "responsibilities": ["Analyse des ventes et segmentation clients sous Tableau"], "domains": ["retail"]}
+  ],
+  "education": [
+    {"institution": "Institut Supérieur de Gestion de Tunis", "degree": "Mastère professionnel", "field_of_study": "Business Intelligence", "dates": {"end_date": "2021-07-01"}},
+    {"institution": "ISG Tunis", "degree": "Licence", "field_of_study": "Informatique de gestion", "dates": {"end_date": "2019-07-01"}}
+  ],
+  "certifications": [{"name": "Microsoft Certified: Power BI Data Analyst Associate (PL-300)", "issue_date": "2023-01-01"}],
+  "languages": [{"language": "Arabic", "level": "native"}, {"language": "French"}, {"language": "English", "level": "B2"}]
+}

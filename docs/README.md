@@ -55,6 +55,24 @@ the tests use a scripted fake LLM.
 | `POST /api/jobs` | `{"text": "<job description>"}` → extracted requirement grid (not yet validated). |
 | `PUT /api/jobs/{id}/requirements` | Recruiter-validated `JobProfile`; marks the grid as the matching reference. |
 | `GET /api/jobs`, `GET /api/jobs/{id}` | List or read jobs. |
+| `PUT /api/jobs/{id}/weights` | Per-job scoring weights (relative), the missing-skill penalty, and knock-outs on/off. |
+| `GET /api/jobs/{id}/ranking?blind=true` | Rank the candidate pool: candidates passing knock-outs, then knocked-out ones with reasons. `blind` hides names. |
+| `POST /api/matches` | `{"candidate_id", "job_id", "explain": true}` → full factor breakdown plus an explanation, saved as match history. |
+| `GET /api/matches/{id}` | Read a stored match. |
+| `GET /api/candidates/{id}/recommendations` | Open jobs ranked for a candidate. |
+
+### How a score is computed (`app/matching`, engine `match-v1`)
+
+1. **Knock-outs** (mandatory language level, certification, location/relocation, work authorization): pass, fail
+   or unknown. Failing candidates are listed separately, never hidden.
+2. **Dimensions**, each scored in [0, 1] and weighted (defaults: required skills 40, preferred 15, experience 20,
+   seniority 10, languages 5, education 5, location 5). Dimensions the job does not use are excluded and the weights
+   renormalized. Skill credit depends on how a skill is demonstrated (professional use and duration > projects >
+   listing, with recency decay) and on the skill graph (PostgreSQL ⟹ SQL). Unverified claims earn nothing.
+3. **Penalty**: each missing required skill multiplies the score by 0.92.
+
+No LLM is involved, and identity fields are never read. An optional explanation is generated from the factors only and
+checked for faithfulness.
 
 Interactive docs: http://localhost:8000/docs. Extraction quality is measured with the harness in
 [`backend/eval/`](../backend/eval/README.md).

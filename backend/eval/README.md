@@ -44,3 +44,27 @@ To add a case, drop a `name.txt` and a `name.gold.json` next to the existing one
 Gold skill lists include skills mentioned only in experience bullets. Precision is therefore a lower bound:
 review `false_positives` before concluding that the model invents things. `unverified_rate` is the stricter
 hallucination measure.
+
+## Matching (Phase 2)
+
+```bash
+cd backend
+uv run python -m eval.run_matching      # deterministic, free: no LLM call
+```
+
+- `data/matching/candidates/*.json`: candidate profiles as a correct extraction of each CV would produce them.
+  This evaluates matching independently of extraction quality. `en-03` carries an unverified (hidden-text)
+  Kubernetes claim, which must earn no credit.
+- `data/matching/jobs/*.json`: the 3 jobs as validated requirement grids.
+- `data/matching/relevance.json`: graded labels (0–3) for all 18 pairs. **They were written before the engine**, so
+  they are not fitted to it.
+
+The ranking matches what the recruiter sees: candidates passing knock-outs first, then knocked-out ones, each
+group by score. Metrics: NDCG@3, NDCG@all, Spearman correlation between scores and labels, and top-1 accuracy.
+`tests/test_matching_eval.py` fails CI if top-1 accuracy drops below 1, NDCG@3 below 0.9 or Spearman below 0.7.
+
+| Engine | NDCG@3 | NDCG@all | Spearman | Top-1 |
+|---|---:|---:|---:|---:|
+| `match-v1` | 0.972 | 0.989 | 0.816 | 3/3 |
+
+With 6 candidates and 3 jobs, these numbers detect regressions; they are not evidence of real-world accuracy.
