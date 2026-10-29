@@ -14,7 +14,8 @@ class Settings(BaseSettings):
     app_name: str = "ATS Recruitment API"
     app_env: Literal["development", "test", "production"] = "development"
     debug: bool = False
-    database_url: str = "postgresql+psycopg://ats_user:ats_password@localhost:5432/ats_db"
+    # Credentials come only from the environment / .env (see .env.example); never hard-code them here.
+    database_url: str = "postgresql+psycopg://localhost:5432/ats_db"
     cors_origins: list[str] = ["http://localhost:3000"]
 
 

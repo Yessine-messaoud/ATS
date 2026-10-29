@@ -17,14 +17,15 @@ jobs:
         env:
           POSTGRES_DB: ats_db
           POSTGRES_USER: ats_user
-          POSTGRES_PASSWORD: ci-password
+          # Throwaway service container: no password, so no credential lives in the repo.
+          POSTGRES_HOST_AUTH_METHOD: trust
         ports: ['5432:5432']
         options: >-
           --health-cmd "pg_isready -U ats_user -d ats_db"
           --health-interval 5s --health-timeout 3s --health-retries 10
     env:
       APP_ENV: test
-      DATABASE_URL: postgresql+psycopg://ats_user:ci-password@localhost:5432/ats_db
+      DATABASE_URL: postgresql+psycopg://ats_user@localhost:5432/ats_db
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
