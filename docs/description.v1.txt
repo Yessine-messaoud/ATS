@@ -1,0 +1,655 @@
+# AI Recruitment & Job Matching Agent
+
+## 1. Vue d'ensemble
+
+**AI Recruitment & Job Matching Agent** est une plateforme d'aide au recrutement basée sur l'Intelligence Artificielle. Elle automatise l'analyse de candidatures, l'extraction d'informations depuis les CV, le matching entre profils candidats et offres d'emploi, ainsi que la recherche et la recommandation d'opportunités plus pertinentes.
+
+Le système accepte plusieurs sources de candidature :
+
+* CV au format PDF ;
+* formulaire candidat ;
+* email de candidature avec pièces jointes.
+
+Les différentes entrées sont transformées en un **profil candidat structuré**, ensuite comparé aux exigences des offres d'emploi.
+
+L'architecture combine des composants déterministes et des composants basés sur les LLM afin de conserver un système **expliquable, contrôlable et évaluable**.
+
+---
+
+## 2. Architecture fonctionnelle
+
+Le système est organisé autour de plusieurs services spécialisés :
+
+```text
+Candidate Input
+       │
+       ├── PDF CV
+       ├── Candidate Form
+       └── Email + Attachment
+              │
+              ▼
+       Input Processing Layer
+              │
+              ▼
+       Document Intelligence
+              │
+              ▼
+       Candidate Profile
+              │
+              ├───────────────┐
+              │               │
+              ▼               ▼
+       Job Analysis      Candidate Analysis
+              │               │
+              └───────┬───────┘
+                      ▼
+               Matching Engine
+                      │
+                      ▼
+             Explainable Score
+                      │
+                      ▼
+              Recruitment Agent
+                      │
+          ┌───────────┴───────────┐
+          ▼                       ▼
+    Current Job             Job Discovery
+      Analysis                 Agent
+          │                       │
+          └───────────┬───────────┘
+                      ▼
+              Ranked Opportunities
+                      │
+                      ▼
+              Human Review
+```
+
+---
+
+## 3. Candidate Intelligence Pipeline
+
+### 3.1 Document ingestion
+
+Les documents entrants sont traités par une couche d'ingestion capable de détecter leur type et d'appliquer le parser approprié.
+
+Pour un CV PDF :
+
+```text
+PDF
+ ↓
+Text Extraction
+ ↓
+OCR fallback if required
+ ↓
+Text Cleaning
+ ↓
+Section Detection
+ ↓
+LLM Extraction
+ ↓
+Structured Candidate Profile
+```
+
+Les CV contenant peu ou pas de texte exploitable peuvent être envoyés vers une étape OCR.
+
+---
+
+### 3.2 Information Extraction
+
+Un LLM est utilisé pour transformer le contenu non structuré en données structurées.
+
+Le modèle produit un objet validé par un schéma Pydantic :
+
+```json
+{
+  "candidate": {
+    "name": "...",
+    "email": "...",
+    "location": "..."
+  },
+  "education": [],
+  "experience": [],
+  "skills": [],
+  "languages": [],
+  "certifications": [],
+  "projects": []
+}
+```
+
+La sortie du LLM n'est pas directement considérée comme fiable : elle passe par une couche de validation et de normalisation.
+
+---
+
+## 4. Skill Normalization
+
+Un problème important du matching est la différence entre les formulations utilisées dans les CV et les offres.
+
+Par exemple :
+
+```text
+CV:
+"Python development"
+
+Job:
+"Python programming"
+
+Normalized:
+Python
+```
+
+Ou :
+
+```text
+CV:
+"PostgreSQL, MySQL"
+
+Job:
+"Relational databases"
+
+Normalized concepts:
+SQL
+Relational Databases
+```
+
+Une combinaison de règles, dictionnaire de compétences, embeddings et LLM peut être utilisée pour normaliser les compétences.
+
+---
+
+# 5. Job Intelligence
+
+Une offre d'emploi suit une pipeline similaire.
+
+```text
+Job Description
+       ↓
+Text Cleaning
+       ↓
+LLM Extraction
+       ↓
+Requirement Schema
+       ↓
+Normalization
+```
+
+Le système extrait notamment :
+
+* job title ;
+* required skills ;
+* preferred skills ;
+* years of experience ;
+* education;
+* languages ;
+* seniority ;
+* location ;
+* remote/hybrid/on-site ;
+* certifications ;
+* responsibilities.
+
+Exemple :
+
+```json
+{
+  "title": "Junior Data Engineer",
+  "seniority": "junior",
+  "required_skills": [
+    "Python",
+    "SQL",
+    "ETL",
+    "Docker"
+  ],
+  "preferred_skills": [
+    "Databricks",
+    "Azure"
+  ],
+  "experience_years": 1,
+  "location": "Tunis",
+  "remote": true
+}
+```
+
+---
+
+# 6. Matching Engine
+
+Le matching est séparé du LLM.
+
+Le système calcule un score à partir de plusieurs dimensions :
+
+```text
+Final Score =
+    Skills Score
+  + Experience Score
+  + Education Score
+  + Project Score
+  + Language Score
+  + Seniority Score
+  + Location Score
+```
+
+Exemple de pondération :
+
+| Dimension  | Weight |
+| ---------- | -----: |
+| Skills     |    35% |
+| Experience |    20% |
+| Education  |    15% |
+| Projects   |    10% |
+| Seniority  |    10% |
+| Languages  |     5% |
+| Location   |     5% |
+
+Chaque dimension produit un score normalisé entre `0` et `1`.
+
+Le score final est ensuite ramené sur 100.
+
+---
+
+# 7. Explainable Matching
+
+Le système ne retourne pas uniquement un score.
+
+Il génère également les facteurs ayant contribué au résultat.
+
+Exemple :
+
+```text
+Match Score: 87/100
+
+Strong matches:
+✓ Python
+✓ SQL
+✓ Docker
+✓ ETL
+✓ Data Engineering projects
+
+Partial matches:
+~ Azure
+~ Databricks
+
+Missing requirements:
+✗ 2+ years experience
+
+Overall assessment:
+Strong match
+```
+
+Cette séparation permet de conserver une logique de scoring déterministe tout en utilisant le LLM pour la génération d'une explication naturelle.
+
+---
+
+# 8. Recruitment Agent
+
+Le Recruitment Agent agit comme une couche d'orchestration.
+
+Il peut déterminer quelle fonctionnalité doit être utilisée en fonction de la demande :
+
+```text
+User Request
+      ↓
+Intent Detection
+      ↓
+Recruitment Agent
+      │
+      ├── analyze_cv()
+      ├── analyze_job()
+      ├── match_candidate()
+      ├── search_jobs()
+      ├── rank_jobs()
+      └── generate_recommendation()
+```
+
+Exemple :
+
+> "Analyse ce CV pour cette offre et dis-moi s'il existe de meilleures opportunités."
+
+L'agent orchestre automatiquement :
+
+```text
+1. Analyze CV
+2. Build candidate profile
+3. Analyze job
+4. Calculate match
+5. Search relevant jobs
+6. Match candidate against retrieved jobs
+7. Rank opportunities
+8. Generate recommendation
+```
+
+L'agent ne calcule donc pas lui-même le score : il appelle les services spécialisés.
+
+---
+
+# 9. Job Discovery Agent
+
+Une fonctionnalité avancée consiste à rechercher automatiquement des offres alternatives.
+
+À partir du profil candidat, le système génère des requêtes de recherche :
+
+```text
+Candidate Profile
+       ↓
+Job Search Query Generation
+       ↓
+External Job Sources
+       ↓
+Job Retrieval
+       ↓
+Job Parsing
+       ↓
+Duplicate Removal
+       ↓
+Candidate-Job Matching
+       ↓
+Ranking
+```
+
+Les offres sont ensuite classées selon :
+
+* pertinence technique ;
+* niveau d'expérience ;
+* localisation ;
+* remote/hybrid ;
+* adéquation avec les projets ;
+* compétences requises ;
+* score global.
+
+Le système peut ainsi répondre :
+
+```text
+Current opportunity: 76%
+
+Better matches found:
+
+1. Data Engineer       93%
+2. ML Engineer         90%
+3. Data Scientist      87%
+```
+
+---
+
+# 10. Embedding & Semantic Search
+
+Les embeddings peuvent être utilisés pour comparer sémantiquement :
+
+* compétences ;
+* expériences ;
+* projets ;
+* responsabilités ;
+* descriptions de postes.
+
+Une architecture vectorielle peut être utilisée :
+
+```text
+Candidate Profile
+       ↓
+Embedding
+       ↓
+Vector Database
+       ↑
+Job Embeddings
+```
+
+Cela permet de dépasser le simple matching lexical.
+
+Par exemple :
+
+```text
+"computer vision"
+```
+
+peut être rapproché de :
+
+```text
+image classification
+object detection
+CNN
+visual recognition
+```
+
+sans nécessiter une correspondance exacte des mots.
+
+---
+
+# 11. Human-in-the-Loop
+
+Le système est conçu comme un outil d'aide à la décision et non comme un système de recrutement entièrement automatisé.
+
+Après l'analyse :
+
+```text
+AI Recommendation
+       ↓
+Human Review
+       ↓
+Accept / Reject / Modify
+```
+
+Le recruteur peut consulter :
+
+* le profil extrait ;
+* les exigences détectées ;
+* le score ;
+* les compétences manquantes ;
+* les raisons du score ;
+* les offres alternatives.
+
+Cette étape permet également de construire ultérieurement un dataset de feedback pour améliorer le système.
+
+---
+
+# 12. Architecture technique
+
+### Backend
+
+* Python 3.11+
+* FastAPI
+* Pydantic
+* SQLAlchemy
+* PostgreSQL
+* Redis
+* Celery / background workers
+
+### AI / NLP
+
+* LLM avec structured outputs
+* Embedding model
+* Vector database
+* RAG
+* Semantic similarity
+* Tool calling
+
+### Document Processing
+
+* PyMuPDF
+* OCR
+* Email parsing
+* MIME attachment processing
+
+### Frontend
+
+* Next.js
+* TypeScript
+* Tailwind CSS
+* shadcn/ui
+
+### Infrastructure
+
+* Docker
+* Docker Compose
+* GitHub Actions
+* CI/CD
+* Environment-based configuration
+
+---
+
+# 13. API Design
+
+Quelques endpoints principaux :
+
+```text
+POST /api/candidates/upload
+POST /api/candidates
+GET  /api/candidates/{id}
+
+POST /api/jobs
+GET  /api/jobs/{id}
+
+POST /api/matching
+GET  /api/matching/{id}
+
+POST /api/agent/analyze
+POST /api/agent/recommend
+
+POST /api/jobs/search
+GET  /api/recommendations/{candidate_id}
+```
+
+Les endpoints peuvent être organisés par domaines fonctionnels plutôt que par technologie AI.
+
+---
+
+# 14. Data Model
+
+Le modèle de données peut être organisé autour de :
+
+```text
+Candidate
+   │
+   ├── Education
+   ├── Experience
+   ├── Skill
+   ├── Project
+   └── Certification
+
+Job
+   │
+   ├── Requirement
+   ├── Skill
+   └── Location
+
+Candidate ─── Application ─── Job
+
+Candidate ─── Match ─── Job
+```
+
+Un `Match` conserve notamment :
+
+```text
+candidate_id
+job_id
+overall_score
+skills_score
+experience_score
+education_score
+project_score
+missing_skills
+matched_skills
+explanation
+created_at
+```
+
+Cela permet de conserver l'historique et d'analyser les performances du moteur.
+
+---
+
+# 15. Evaluation
+
+Une partie importante du projet sera consacrée à l'évaluation.
+
+### Extraction
+
+Évaluer :
+
+* precision ;
+* recall ;
+* F1-score ;
+* field-level accuracy.
+
+Exemple :
+
+```text
+Skill extraction F1       0.91
+Experience extraction F1  0.94
+Education extraction F1   0.96
+```
+
+### Matching
+
+Créer un dataset de candidatures/offres annotées manuellement et comparer le classement produit par le système avec une référence humaine.
+
+Mesures possibles :
+
+* Precision@K ;
+* Recall@K ;
+* NDCG ;
+* ranking correlation ;
+* human agreement.
+
+### Agent
+
+Évaluer :
+
+* tool selection accuracy ;
+* successful workflow completion ;
+* hallucination rate ;
+* latency ;
+* cost per analysis.
+
+---
+
+# 16. Sécurité et confidentialité
+
+Les CV contiennent des informations personnelles. Le système doit donc prévoir :
+
+* validation des fichiers ;
+* limitation de taille ;
+* contrôle des types MIME ;
+* suppression des fichiers temporaires ;
+* chiffrement des données sensibles ;
+* gestion des secrets via environment variables ;
+* logs sans données personnelles ;
+* politique de rétention des CV.
+
+Les données personnelles ne doivent pas être utilisées pour calculer le score de matching lorsqu'elles ne sont pas pertinentes pour le poste.
+
+---
+
+# 17. Objectif final
+
+Le système final doit permettre le workflow suivant :
+
+```text
+                CANDIDATE
+                    │
+          PDF / FORM / EMAIL
+                    │
+                    ▼
+          ┌──────────────────┐
+          │ Document         │
+          │ Intelligence     │
+          └────────┬─────────┘
+                   ▼
+          Candidate Profile
+                   │
+                   ▼
+          ┌──────────────────┐
+          │ Recruitment      │
+          │ Agent            │
+          └────────┬─────────┘
+                   │
+          ┌────────┴────────┐
+          ▼                 ▼
+     Job Matching      Job Discovery
+          │                 │
+          ▼                 ▼
+     Match Score       Job Ranking
+          │                 │
+          └────────┬────────┘
+                   ▼
+             Recommendation
+                   │
+                   ▼
+             Human Review
+```
+
+L'objectif n'est donc pas simplement de créer un **CV parser**, mais une plateforme combinant **Document Intelligence, NLP/LLM, Semantic Matching, Agentic AI, Information Retrieval et Explainable AI** dans un cas d'usage concret de recrutement.
