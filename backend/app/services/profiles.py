@@ -16,6 +16,8 @@ from app.ingestion import FileKind, ingest_document
 from app.ingestion.injection import detect_prompt_injection
 from app.ingestion.pipeline import DocumentFlag
 from app.models import CandidateProfile, JobProfile, SourceType
+from app.search.index import index_candidate, index_job
+from app.services.dedup import find_duplicates
 
 SOURCE_TYPES = {FileKind.EMAIL: SourceType.EMAIL}
 
@@ -88,6 +90,14 @@ def create_candidate_from_upload(
         model=result.meta["model"],
         flags=document_record.flags,
     )
+    index_candidate(db, candidate)
+    db.flush()
+    duplicates = find_duplicates(db, candidate)
+    if duplicates:
+        candidate.extraction_meta = {
+            **candidate.extraction_meta,
+            "possible_duplicates": [{"candidate_id": str(d.candidate_id), "reasons": d.reasons} for d in duplicates],
+        }
     db.commit()
     return candidate
 
@@ -124,6 +134,7 @@ def create_job_from_text(db: Session, llm: LLMClient, settings: Settings, *, tex
     db.add(job)
     db.flush()
     _audit(db, "job.extracted", "job", job.id, prompt_version=result.meta["prompt_version"], model=result.meta["model"])
+    index_job(db, job)
     db.commit()
     return job
 
@@ -134,6 +145,7 @@ def validate_job_requirements(db: Session, job: JobRecord, profile: JobProfile, 
     job.title = profile.title
     job.requirements_validated = True
     db.add(AuditLogRecord(actor=actor, action="job.requirements_validated", entity_type="job", entity_id=job.id))
+    index_job(db, job)
     db.commit()
     return job
 
@@ -173,5 +185,6 @@ def correct_candidate_profile(
             details={"changed_paths": changed},
         )
     )
+    index_candidate(db, candidate)
     db.commit()
     return changed

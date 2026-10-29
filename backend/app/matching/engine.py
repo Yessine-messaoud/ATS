@@ -21,8 +21,15 @@ from .scoring import (
     score_skills,
 )
 from .skills import canonical, normalize_text
+from .taxonomy import active_taxonomy
 
 ENGINE_VERSION = "match-v1"
+
+
+def engine_version() -> str:
+    """Engine version plus the active taxonomy, so every stored score is traceable to the rules that produced it."""
+    taxonomy = active_taxonomy()
+    return f"{ENGINE_VERSION}+{taxonomy.version}" if taxonomy else ENGINE_VERSION
 
 
 def _relevant_keys(job: JobProfile) -> set[str]:
@@ -78,7 +85,7 @@ def match(
     penalty = (1 - weights.missing_required_penalty) ** len(missing)
     knockouts = evaluate_knockouts(candidate, job) if weights.knockouts_enabled else []
     return MatchResult(
-        engine_version=ENGINE_VERSION,
+        engine_version=engine_version(),
         overall_score=round(100 * raw * penalty, 1),
         raw_score=round(100 * raw, 1),
         penalty_multiplier=round(penalty, 4),

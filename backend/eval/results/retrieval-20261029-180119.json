@@ -1,0 +1,73 @@
+{
+  "summary": {
+    "pool": 306,
+    "mean_recall@10": 1.0,
+    "mean_recall@20": 1.0,
+    "mean_recall@50": 1.0,
+    "mean_vector_recall@10": 0.889,
+    "mean_vector_recall@20": 1.0,
+    "mean_vector_recall@50": 1.0,
+    "mean_text_recall@10": 1.0,
+    "mean_text_recall@20": 1.0,
+    "mean_text_recall@50": 1.0
+  },
+  "jobs": [
+    {
+      "job": "job-01-data-engineer",
+      "relevant": 3,
+      "recall@10": 1.0,
+      "vector_recall@10": 0.667,
+      "text_recall@10": 1.0,
+      "recall@20": 1.0,
+      "vector_recall@20": 1.0,
+      "text_recall@20": 1.0,
+      "recall@50": 1.0,
+      "vector_recall@50": 1.0,
+      "text_recall@50": 1.0,
+      "relevant_ranks": [
+        2,
+        4,
+        6
+      ]
+    },
+    {
+      "job": "job-02-ml-engineer",
+      "relevant": 2,
+      "recall@10": 1.0,
+      "vector_recall@10": 1.0,
+      "text_recall@10": 1.0,
+      "recall@20": 1.0,
+      "vector_recall@20": 1.0,
+      "text_recall@20": 1.0,
+      "recall@50": 1.0,
+      "vector_recall@50": 1.0,
+      "text_recall@50": 1.0,
+      "relevant_ranks": [
+        2,
+        5
+      ]
+    },
+    {
+      "job": "job-03-stage-pfe",
+      "relevant": 2,
+      "recall@10": 1.0,
+      "vector_recall@10": 1.0,
+      "text_recall@10": 1.0,
+      "recall@20": 1.0,
+      "vector_recall@20": 1.0,
+      "text_recall@20": 1.0,
+      "recall@50": 1.0,
+      "vector_recall@50": 1.0,
+      "text_recall@50": 1.0,
+      "relevant_ranks": [
+        2,
+        4
+      ]
+    }
+  ],
+  "config": {
+    "embedder": "hashing-ngram-v1-384",
+    "rrf_k": 60,
+    "distractors": 300
+  }
+}

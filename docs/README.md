@@ -61,6 +61,18 @@ the tests use a scripted fake LLM.
 | `POST /api/matches` | `{"candidate_id", "job_id", "explain": true}` → full factor breakdown plus an explanation, saved as match history. |
 | `GET /api/matches/{id}` | Read a stored match. |
 | `GET /api/candidates/{id}/recommendations` | Open jobs ranked for a candidate. |
+| `GET /api/candidates/{id}/duplicates` | Possible duplicates (same email or phone, or similar name + near-identical profile). |
+| `POST /api/candidates/{id}/merge` | `{"duplicate_id"}`: recruiter-confirmed merge (applications and match history move; audit logged). |
+
+### Search and taxonomy (Phase 4)
+
+- Every candidate and job is indexed for **hybrid retrieval**: an embedding (pgvector, HNSW) plus Postgres full-text
+  search, fused with Reciprocal Rank Fusion. Above `FULL_SCORING_LIMIT` candidates (default 500), rankings score the
+  retrieval shortlist (`RETRIEVAL_K`, default 200) instead of the whole pool. The order is always the deterministic
+  score.
+- Rebuild the index with `uv run python -m scripts.reindex` (e.g. after changing the embedding model).
+- **ESCO**: download the CSV export (English + French) from https://esco.ec.europa.eu/en/use-esco/download, then run
+  `uv run python -m scripts.import_esco <folder> --version esco-1.2.0` and restart the API.
 
 ### How a score is computed (`app/matching`, engine `match-v1`)
 

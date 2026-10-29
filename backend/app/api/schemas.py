@@ -82,6 +82,11 @@ class RankingOut(BaseModel):
     engine_version: str
     requirements_validated: bool
     weights: ScoringWeights
+    retrieval_mode: Literal["all", "hybrid"] = Field(
+        description="all: every candidate was scored; hybrid: a retrieval shortlist was scored."
+    )
+    pool_size: int
+    scored: int
     ranked: list[RankedCandidateOut]
     knocked_out: list[RankedCandidateOut]
 
@@ -160,3 +165,26 @@ class ApplicationOut(BaseModel):
             overall_score=result.overall_score if result else None,
             passed_knockouts=result.passed_knockouts if result else None,
         )
+
+
+class DuplicateOut(BaseModel):
+    candidate_id: uuid.UUID
+    display_name: str
+    professional_title: str | None
+    created_at: datetime
+    reasons: list[str]
+
+    @classmethod
+    def build(cls, record: CandidateRecord, reasons: list[str]) -> DuplicateOut:
+        profile = CandidateProfile.model_validate(record.profile)
+        return cls(
+            candidate_id=record.id,
+            display_name=profile.identity.full_name or blind_label(record.id),
+            professional_title=profile.professional_title,
+            created_at=record.created_at,
+            reasons=reasons,
+        )
+
+
+class MergeIn(BaseModel):
+    duplicate_id: uuid.UUID

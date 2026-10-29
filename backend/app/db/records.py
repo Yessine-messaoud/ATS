@@ -12,8 +12,22 @@ from datetime import datetime
 from enum import StrEnum
 from typing import Any
 
-from sqlalchemy import DateTime, Enum, Float, ForeignKey, Integer, LargeBinary, String, Text, UniqueConstraint, func
-from sqlalchemy.dialects.postgresql import JSONB
+from pgvector.sqlalchemy import Vector
+from sqlalchemy import (
+    Computed,
+    DateTime,
+    Enum,
+    Float,
+    ForeignKey,
+    Index,
+    Integer,
+    LargeBinary,
+    String,
+    Text,
+    UniqueConstraint,
+    func,
+)
+from sqlalchemy.dialects.postgresql import JSONB, TSVECTOR
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base, IdMixin, TimestampMixin
@@ -112,3 +126,67 @@ class AuditLogRecord(IdMixin, Base):
     entity_type: Mapped[str] = mapped_column(String(32))
     entity_id: Mapped[uuid.UUID | None] = mapped_column(index=True)
     details: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
+
+
+EMBEDDING_DIM = 384
+
+
+class _SearchIndex:
+    """Retrieval representation of a profile: text for full-text search and an embedding for vector search."""
+
+    model: Mapped[str] = mapped_column(String(64))
+    search_text: Mapped[str] = mapped_column(Text)
+    tsv: Mapped[str] = mapped_column(TSVECTOR, Computed("to_tsvector('simple', search_text)", persisted=True))
+    embedding: Mapped[list[float]] = mapped_column(Vector(EMBEDDING_DIM))
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
+class CandidateSearchRecord(_SearchIndex, Base):
+    __tablename__ = "candidate_search"
+    __table_args__ = (
+        Index("ix_candidate_search_tsv", "tsv", postgresql_using="gin"),
+        Index(
+            "ix_candidate_search_embedding",
+            "embedding",
+            postgresql_using="hnsw",
+            postgresql_ops={"embedding": "vector_cosine_ops"},
+        ),
+    )
+
+    candidate_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("candidates.id", ondelete="CASCADE"), primary_key=True)
+
+
+class JobSearchRecord(_SearchIndex, Base):
+    __tablename__ = "job_search"
+    __table_args__ = (
+        Index(
+            "ix_job_search_embedding",
+            "embedding",
+            postgresql_using="hnsw",
+            postgresql_ops={"embedding": "vector_cosine_ops"},
+        ),
+    )
+
+    job_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("jobs.id", ondelete="CASCADE"), primary_key=True)
+
+
+class TaxonomySkillRecord(Base):
+    """One ESCO skill concept (imported with scripts/import_esco.py)."""
+
+    __tablename__ = "taxonomy_skills"
+
+    uri: Mapped[str] = mapped_column(String(255), primary_key=True)
+    version: Mapped[str] = mapped_column(String(32))
+    label_en: Mapped[str | None] = mapped_column(Text)
+    label_fr: Mapped[str | None] = mapped_column(Text)
+    alt_labels: Mapped[list[str]] = mapped_column(JSONB, default=list)
+    skill_type: Mapped[str | None] = mapped_column(String(64))
+
+
+class TaxonomyBroaderRecord(Base):
+    __tablename__ = "taxonomy_broader"
+
+    narrower_uri: Mapped[str] = mapped_column(String(255), primary_key=True)
+    broader_uri: Mapped[str] = mapped_column(String(255), primary_key=True)

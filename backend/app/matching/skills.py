@@ -12,6 +12,8 @@ from functools import cache
 
 from rapidfuzz import fuzz
 
+from .taxonomy import active_taxonomy
+
 FUZZY_SAME_SKILL = 92
 IMPLIED_CREDIT = 0.9
 
@@ -129,20 +131,32 @@ def normalize_text(text: str) -> str:
 
 
 def canonical(name: str) -> str:
+    """Curated synonyms first; then, when a taxonomy is loaded, any ESCO label (EN/FR, preferred or alternative)."""
     key = normalize_text(name)
-    return SYNONYMS.get(key, key)
+    key = SYNONYMS.get(key, key)
+    taxonomy = active_taxonomy()
+    if taxonomy is not None and (uri := taxonomy.uri_for(key)) is not None:
+        return taxonomy.canonical_key(uri)
+    return key
 
 
 @cache
 def implied_by(skill: str) -> frozenset[str]:
-    """Every skill demonstrated by `skill` (transitive closure of IMPLIES), excluding itself."""
+    """Every skill demonstrated by `skill`, excluding itself: the transitive closure of IMPLIES, plus the
+    taxonomy's broader concepts when one is loaded."""
+    taxonomy = active_taxonomy()
     seen: set[str] = set()
     stack = list(IMPLIES.get(skill, ()))
+    if taxonomy is not None:
+        stack.extend(taxonomy.broader_keys(skill))
     while stack:
         current = stack.pop()
         if current not in seen:
             seen.add(current)
             stack.extend(IMPLIES.get(current, ()))
+            if taxonomy is not None:
+                stack.extend(taxonomy.broader_keys(current))
+    seen.discard(skill)
     return frozenset(seen)
 
 

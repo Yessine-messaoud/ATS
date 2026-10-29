@@ -115,3 +115,13 @@ export async function saveCandidateProfile(candidateId: string, profile: Candida
   revalidatePath(`/candidates/${candidateId}`);
   return { ok: changed.length ? `Saved ${changed.length} change(s).` : "No changes." };
 }
+
+export async function mergeCandidates(keepId: string, duplicateId: string): Promise<ActionState> {
+  try {
+    await sendJson<Candidate>(`/api/candidates/${keepId}/merge`, "POST", { duplicate_id: duplicateId });
+  } catch (error) {
+    return failure(error);
+  }
+  revalidatePath("/candidates", "layout");
+  return { ok: "Merged." };
+}

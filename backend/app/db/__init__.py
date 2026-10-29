@@ -6,9 +6,13 @@ from .records import (
     ApplicationStage,
     AuditLogRecord,
     CandidateRecord,
+    CandidateSearchRecord,
     DocumentRecord,
     JobRecord,
+    JobSearchRecord,
     MatchRecord,
+    TaxonomyBroaderRecord,
+    TaxonomySkillRecord,
 )
 from .session import get_engine, get_session
 
@@ -18,9 +22,13 @@ __all__ = [
     "AuditLogRecord",
     "Base",
     "CandidateRecord",
+    "CandidateSearchRecord",
     "DocumentRecord",
     "JobRecord",
+    "JobSearchRecord",
     "MatchRecord",
+    "TaxonomyBroaderRecord",
+    "TaxonomySkillRecord",
     "get_engine",
     "get_session",
 ]

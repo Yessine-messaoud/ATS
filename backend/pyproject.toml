@@ -17,6 +17,7 @@ dependencies = [
     "pymupdf>=2.0",
     "rapidfuzz>=3.14.6",
     "python-multipart>=0.0.32",
+    "pgvector>=0.3",
 ]
 
 [dependency-groups]

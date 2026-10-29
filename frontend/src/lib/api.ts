@@ -20,6 +20,7 @@ export type Weights = Schemas["ScoringWeights"];
 export type CandidateDocument = Schemas["CandidateDocumentOut"];
 export type Recommendation = Schemas["RecommendedJobOut"];
 export type Stage = Schemas["ApplicationOut"]["stage"];
+export type Duplicate = Schemas["DuplicateOut"];
 
 const API_URL = process.env.API_URL ?? "http://localhost:8000";
 
@@ -77,4 +78,5 @@ export const api = {
   document: (id: string) => read<CandidateDocument>(`/api/candidates/${id}/document`),
   recommendations: (id: string) => read<Recommendation[]>(`/api/candidates/${id}/recommendations`),
   match: (id: string) => read<Match>(`/api/matches/${id}`),
+  duplicates: (id: string) => read<Duplicate[]>(`/api/candidates/${id}/duplicates`),
 };

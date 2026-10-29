@@ -36,8 +36,11 @@ export default async function RankingPage(props: PageProps<"/jobs/[id]">) {
         <RankingTable rows={ranking.knocked_out} jobId={id} inPipeline={inPipeline} blind={blind} />
       </Card>
       <p className="text-xs text-zinc-500">
-        Engine {ranking.engine_version}. Scores are computed deterministically from the validated requirements; the
-        recruiter makes every decision.
+        Engine {ranking.engine_version}.{" "}
+        {ranking.retrieval_mode === "all"
+          ? `All ${ranking.pool_size} candidates scored.`
+          : `${ranking.scored} of ${ranking.pool_size} candidates shortlisted by hybrid search, then scored.`}{" "}
+        Scores are computed deterministically from the validated requirements; the recruiter makes every decision.
       </p>
     </div>
   );

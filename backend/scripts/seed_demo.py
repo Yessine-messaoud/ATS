@@ -19,6 +19,7 @@ from app.extraction.evidence import verify_evidence
 from app.ingestion import ingest_document
 from app.ingestion.pipeline import DocumentFlag
 from app.models import CandidateProfile, JobProfile, SourceType
+from app.search.index import reindex_all
 from eval.render import render_pdf
 
 EVAL = Path(__file__).parents[1] / "eval" / "data"
@@ -136,6 +137,7 @@ def seed(db: Session) -> dict[str, int]:
             db.add(ApplicationRecord(job_id=pipeline_job.id, candidate_id=pipeline_candidate.id, stage=stage))
             created["applications"] += 1
     db.commit()
+    reindex_all(db)
     return created
 
 

@@ -5,6 +5,7 @@ import { Badge, Card, Empty, Notice } from "@/components/ui";
 import { ApiError, api, type CandidateDocument } from "@/lib/api";
 import { FLAG_LABELS } from "@/lib/enums";
 
+import { Duplicates } from "./duplicates";
 import { ProfileReview } from "./profile-review";
 
 export async function generateMetadata(props: PageProps<"/candidates/[id]">): Promise<Metadata> {
@@ -24,10 +25,11 @@ async function documentOrNull(id: string): Promise<CandidateDocument | null> {
 
 export default async function CandidatePage(props: PageProps<"/candidates/[id]">) {
   const { id } = await props.params;
-  const [candidate, document, recommendations] = await Promise.all([
+  const [candidate, document, recommendations, duplicates] = await Promise.all([
     api.candidate(id),
     documentOrNull(id),
     api.recommendations(id),
+    api.duplicates(id),
   ]);
   const extraction = candidate.extraction as {
     model?: string;
@@ -47,6 +49,7 @@ export default async function CandidatePage(props: PageProps<"/candidates/[id]">
         </p>
       </div>
 
+      <Duplicates candidateId={candidate.id} duplicates={duplicates} />
       {document?.flags.includes("possible_prompt_injection") && (
         <Notice tone="red">
           <strong>Possible prompt injection.</strong> This document contains text addressed to an automated screening

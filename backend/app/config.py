@@ -31,6 +31,10 @@ class Settings(BaseSettings):
     ocr_languages: str = "eng+fra"
     document_retention_days: int = 180
 
+    # Retrieval: pools up to this size are scored exhaustively; larger pools are shortlisted by hybrid retrieval.
+    full_scoring_limit: int = 500
+    retrieval_k: int = 200
+
 
 @lru_cache
 def get_settings() -> Settings:

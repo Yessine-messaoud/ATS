@@ -6,7 +6,7 @@ from fastapi import APIRouter, Query, status
 from sqlalchemy import select
 
 from app.db import JobRecord
-from app.matching import ENGINE_VERSION, ScoringWeights
+from app.matching import ScoringWeights, engine_version
 from app.models import JobProfile
 from app.services.matching import job_weights, rank_candidates, score, set_job_weights
 from app.services.pipeline import job_applications
@@ -56,19 +56,25 @@ def put_job_weights(job_id: uuid.UUID, weights: ScoringWeights, db: DbSession) -
 def get_job_ranking(
     job_id: uuid.UUID,
     db: DbSession,
+    settings: AppSettings,
     limit: int = Query(20, ge=1, le=200),
     blind: bool = Query(False, description="Hide candidate names (blind screening)."),
 ) -> RankingOut:
     """Rank the candidate pool for a job. Knocked-out candidates are listed separately, never hidden."""
     record = get_or_404(lambda: db.get(JobRecord, job_id), "job")
-    passed, knocked_out = rank_candidates(db, record, limit=limit)
+    run = rank_candidates(
+        db, record, limit=limit, full_scoring_limit=settings.full_scoring_limit, retrieval_k=settings.retrieval_k
+    )
     return RankingOut(
         job_id=record.id,
-        engine_version=ENGINE_VERSION,
+        engine_version=engine_version(),
         requirements_validated=record.requirements_validated,
         weights=job_weights(record),
-        ranked=[RankedCandidateOut.build(r, blind=blind) for r in passed],
-        knocked_out=[RankedCandidateOut.build(r, blind=blind) for r in knocked_out],
+        retrieval_mode=run.mode,
+        pool_size=run.pool_size,
+        scored=run.scored,
+        ranked=[RankedCandidateOut.build(r, blind=blind) for r in run.passed],
+        knocked_out=[RankedCandidateOut.build(r, blind=blind) for r in run.knocked_out],
     )
 
 

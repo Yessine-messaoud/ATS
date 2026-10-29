@@ -333,6 +333,108 @@
         }
       }
     },
+    "/api/candidates/{candidate_id}/duplicates": {
+      "get": {
+        "tags": [
+          "candidates"
+        ],
+        "summary": "Get Duplicates",
+        "description": "Possible duplicates of this candidate (same email or phone, or same person with a near-identical profile).",
+        "operationId": "get_duplicates_api_candidates__candidate_id__duplicates_get",
+        "parameters": [
+          {
+            "name": "candidate_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Candidate Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DuplicateOut"
+                  },
+                  "title": "Response Get Duplicates Api Candidates  Candidate Id  Duplicates Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/candidates/{candidate_id}/merge": {
+      "post": {
+        "tags": [
+          "candidates"
+        ],
+        "summary": "Merge",
+        "description": "Merge `duplicate_id` into this candidate (recruiter-confirmed). The duplicate record is deleted.",
+        "operationId": "merge_api_candidates__candidate_id__merge_post",
+        "parameters": [
+          {
+            "name": "candidate_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Candidate Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MergeIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/jobs": {
       "post": {
         "tags": [
@@ -2137,6 +2239,51 @@
         ],
         "title": "DimensionScore"
       },
+      "DuplicateOut": {
+        "properties": {
+          "candidate_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Candidate Id"
+          },
+          "display_name": {
+            "type": "string",
+            "title": "Display Name"
+          },
+          "professional_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Professional Title"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "reasons": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Reasons"
+          }
+        },
+        "type": "object",
+        "required": [
+          "candidate_id",
+          "display_name",
+          "professional_title",
+          "created_at",
+          "reasons"
+        ],
+        "title": "DuplicateOut"
+      },
       "Education": {
         "properties": {
           "evidence": {
@@ -3804,6 +3951,20 @@
         ],
         "title": "MatchResult"
       },
+      "MergeIn": {
+        "properties": {
+          "duplicate_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Duplicate Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "duplicate_id"
+        ],
+        "title": "MergeIn"
+      },
       "ProfileCorrectionOut": {
         "properties": {
           "candidate": {
@@ -4003,6 +4164,23 @@
           "weights": {
             "$ref": "#/components/schemas/ScoringWeights"
           },
+          "retrieval_mode": {
+            "type": "string",
+            "enum": [
+              "all",
+              "hybrid"
+            ],
+            "title": "Retrieval Mode",
+            "description": "all: every candidate was scored; hybrid: a retrieval shortlist was scored."
+          },
+          "pool_size": {
+            "type": "integer",
+            "title": "Pool Size"
+          },
+          "scored": {
+            "type": "integer",
+            "title": "Scored"
+          },
           "ranked": {
             "items": {
               "$ref": "#/components/schemas/RankedCandidateOut"
@@ -4024,6 +4202,9 @@
           "engine_version",
           "requirements_validated",
           "weights",
+          "retrieval_mode",
+          "pool_size",
+          "scored",
           "ranked",
           "knocked_out"
         ],

@@ -7,11 +7,19 @@ from sqlalchemy import select
 
 from app.db import CandidateRecord, DocumentRecord
 from app.models import CandidateProfile
+from app.services.dedup import MergeConflict, find_duplicates, merge_candidates
 from app.services.matching import recommend_jobs
 from app.services.profiles import correct_candidate_profile, create_candidate_from_upload
 
 from .deps import AppSettings, DbSession, Llm, domain_errors, get_or_404
-from .schemas import CandidateDocumentOut, CandidateOut, ProfileCorrectionOut, RecommendedJobOut
+from .schemas import (
+    CandidateDocumentOut,
+    CandidateOut,
+    DuplicateOut,
+    MergeIn,
+    ProfileCorrectionOut,
+    RecommendedJobOut,
+)
 
 router = APIRouter(prefix="/candidates", tags=["candidates"])
 
@@ -93,3 +101,28 @@ def get_document_file(candidate_id: uuid.UUID, db: DbSession) -> Response:
         media_type=document.mime_type or "application/octet-stream",
         headers={"Content-Disposition": "inline", "X-Content-Type-Options": "nosniff"},
     )
+
+
+@router.get("/{candidate_id}/duplicates")
+def get_duplicates(candidate_id: uuid.UUID, db: DbSession) -> list[DuplicateOut]:
+    """Possible duplicates of this candidate (same email or phone, or same person with a near-identical profile)."""
+    record = get_or_404(lambda: db.get(CandidateRecord, candidate_id), "candidate")
+    found = []
+    for duplicate in find_duplicates(db, record):
+        other = db.get(CandidateRecord, duplicate.candidate_id)
+        if other is not None:
+            found.append(DuplicateOut.build(other, duplicate.reasons))
+    return found
+
+
+@router.post("/{candidate_id}/merge")
+def merge(candidate_id: uuid.UUID, body: MergeIn, db: DbSession) -> CandidateOut:
+    """Merge `duplicate_id` into this candidate (recruiter-confirmed). The duplicate record is deleted."""
+    keep = get_or_404(lambda: db.get(CandidateRecord, candidate_id), "candidate")
+    duplicate = get_or_404(lambda: db.get(CandidateRecord, body.duplicate_id), "duplicate candidate")
+    try:
+        # TODO(phase-3): use the authenticated recruiter as actor once auth exists.
+        merged = merge_candidates(db, keep, duplicate, actor="recruiter")
+    except MergeConflict as exc:
+        raise HTTPException(409, str(exc)) from exc
+    return CandidateOut.from_record(merged)

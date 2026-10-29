@@ -68,3 +68,21 @@ group by score. Metrics: NDCG@3, NDCG@all, Spearman correlation between scores a
 | `match-v1` | 0.972 | 0.989 | 0.816 | 3/3 |
 
 With 6 candidates and 3 jobs, these numbers detect regressions; they are not evidence of real-world accuracy.
+
+## Retrieval (Phase 4)
+
+```bash
+cd backend
+uv run python -m eval.run_retrieval     # needs Postgres; runs in a rolled-back transaction
+```
+
+The 6 labelled candidates are hidden among 300 deterministic synthetic distractors (nurses, accountants, PHP/MySQL
+developers, QA testers, …; `eval/distractors.py`). For each job, we measure recall@K of the candidates labelled
+relevant (≥ 1) in the shortlist that would be scored.
+
+| Embedder | Hybrid R@10 | Vector-only R@10 | Full-text-only R@10 | Hybrid R@20 |
+|---|---:|---:|---:|---:|
+| `hashing-ngram-v1-384` | 1.000 | 0.889 | 1.000 | 1.000 |
+
+The distractors are mostly far from the target roles, so this is an easy setting; it guards against regressions
+and gives a baseline for comparing a neural embedding model.

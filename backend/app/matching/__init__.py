@@ -1,6 +1,6 @@
 """Deterministic candidate-job matching with explainable factors."""
 
-from .engine import ENGINE_VERSION, match
+from .engine import ENGINE_VERSION, engine_version, match
 from .results import Explanation, Factor, FactorStatus, Knockout, KnockoutStatus, MatchResult, ScoringWeights
 
 __all__ = [
@@ -12,5 +12,6 @@ __all__ = [
     "KnockoutStatus",
     "MatchResult",
     "ScoringWeights",
+    "engine_version",
     "match",
 ]

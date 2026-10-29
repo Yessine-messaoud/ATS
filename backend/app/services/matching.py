@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 from dataclasses import dataclass
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.db import AuditLogRecord, CandidateRecord, JobRecord, MatchRecord
@@ -13,6 +13,7 @@ from app.extraction.llm import LLMClient
 from app.matching import MatchResult, ScoringWeights, match
 from app.matching.explain import explain
 from app.models import CandidateProfile, JobProfile
+from app.search.retrieval import retrieve_candidates
 
 
 @dataclass
@@ -75,13 +76,38 @@ def create_match(
     return record
 
 
-def rank_candidates(db: Session, job: JobRecord, *, limit: int) -> tuple[list[Ranked], list[Ranked]]:
-    """(candidates passing knock-outs, knocked-out candidates), each by descending score."""
-    scored = [Ranked(candidate, score(candidate, job)) for candidate in db.scalars(select(CandidateRecord))]
+@dataclass
+class RankingRun:
+    passed: list[Ranked]
+    knocked_out: list[Ranked]
+    mode: str
+    """"all" (every candidate scored) or "hybrid" (shortlisted by retrieval, then scored)."""
+    pool_size: int
+    scored: int
+
+
+def rank_candidates(
+    db: Session, job: JobRecord, *, limit: int, full_scoring_limit: int, retrieval_k: int
+) -> RankingRun:
+    """Score the pool for a job; above `full_scoring_limit` candidates, score only the hybrid-retrieval shortlist."""
+    pool_size = db.scalar(select(func.count()).select_from(CandidateRecord)) or 0
+    if pool_size <= full_scoring_limit:
+        mode, candidates = "all", list(db.scalars(select(CandidateRecord)))
+    else:
+        shortlist = retrieve_candidates(db, JobProfile.model_validate(job.profile), k=retrieval_k)
+        mode = "hybrid"
+        candidates = list(
+            db.scalars(select(CandidateRecord).where(CandidateRecord.id.in_([r.candidate_id for r in shortlist])))
+        )
+    scored = [Ranked(candidate, score(candidate, job)) for candidate in candidates]
     scored.sort(key=lambda r: -r.result.overall_score)
-    passed = [r for r in scored if r.result.passed_knockouts]
-    knocked_out = [r for r in scored if not r.result.passed_knockouts]
-    return passed[:limit], knocked_out[:limit]
+    return RankingRun(
+        passed=[r for r in scored if r.result.passed_knockouts][:limit],
+        knocked_out=[r for r in scored if not r.result.passed_knockouts][:limit],
+        mode=mode,
+        pool_size=pool_size,
+        scored=len(scored),
+    )
 
 
 def recommend_jobs(db: Session, candidate: CandidateRecord, *, limit: int) -> list[RecommendedJob]:

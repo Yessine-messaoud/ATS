@@ -96,15 +96,21 @@ A phase is complete when its **Done when** line is true.
 
 ## Phase 4 — Semantic search & taxonomy
 
-- [ ] Import ESCO skills (FR/EN). Map the normalizer onto ESCO IDs
-- [ ] Skill graph (implies / parent / related) with partial-match weights
-- [ ] Multilingual embeddings stored in pgvector (profiles, jobs, experiences)
-- [ ] Hybrid retrieval (Postgres full-text + vector) → top-K → deterministic score
-- [ ] Optional cross-encoder rerank, kept only if NDCG improves
-- [ ] Candidate → job recommendations + talent rediscovery when a new job opens
-- [ ] Candidate deduplication (exact + fuzzy, human-confirmed merge)
+- [x] ESCO importer for the official CSV export (`skills_en.csv`, `skills_fr.csv`, `broaderRelationsSkillPillar.csv`) → `taxonomy_skills` / `taxonomy_broader`, loaded at API startup (`scripts/import_esco.py`)
+- [x] Normalizer uses ESCO when loaded: FR/EN preferred and alternative labels → one canonical skill; narrower ⟹ broader implication. The engine version records the taxonomy (`match-v1+esco-x.y`)
+- [ ] **Run the import with the real ESCO download** (manual download from esco.ec.europa.eu; tested only on a fixture in the ESCO CSV layout)
+- [x] Skill graph with partial-match weights (curated v0, kept alongside ESCO)
+- [x] Embeddings in pgvector (`candidate_search` / `job_search`, HNSW cosine index) + Postgres full-text (`tsvector`, GIN), kept in sync on upload, correction and job changes; `scripts/reindex.py`
+- [x] Embedding provider interface; default `HashingEmbedder` (deterministic character n-grams, no download or key)
+- [ ] Plug in a neural multilingual embedding model (provider choice pending) and compare on the retrieval eval
+- [x] Hybrid retrieval (vector + full-text, Reciprocal Rank Fusion) → shortlist → deterministic score, used automatically above `FULL_SCORING_LIMIT` (500) candidates; the ranking reports its mode
+- [x] Retrieval eval with 300 synthetic distractors: hybrid recall@10 = 1.0 (vector-only 0.889), regression-guarded
+- [ ] Cross-encoder rerank: skipped. Final ordering is the deterministic score, so a reranker would only change the shortlist, and recall@10 is already 1.0
+- [x] Candidate → job recommendations (Phase 2) + talent rediscovery: rankings always cover the whole pool (or its hybrid shortlist), including past applicants
+- [x] Duplicate detection (email, phone, similar name + near-identical profile), flagged at upload; recruiter-confirmed merge moves applications and match history (UI + audit)
+- [ ] Talent-pool consent: only rediscover candidates who agreed (needs a consent field; see Phase 6)
 
-**Done when:** NDCG@10 improves over the Phase 2 baseline on the gold set.
+**Done when:** NDCG@10 improves over the Phase 2 baseline on the gold set. *(Not applicable as written: retrieval does not change the order, which is always the deterministic score. Measured instead: retrieval recall@K on a 306-candidate pool.)*
 
 ## Phase 5 — Agent
 

@@ -137,6 +137,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/candidates/{candidate_id}/duplicates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Duplicates
+         * @description Possible duplicates of this candidate (same email or phone, or same person with a near-identical profile).
+         */
+        get: operations["get_duplicates_api_candidates__candidate_id__duplicates_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/candidates/{candidate_id}/merge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Merge
+         * @description Merge `duplicate_id` into this candidate (recruiter-confirmed). The duplicate record is deleted.
+         */
+        post: operations["merge_api_candidates__candidate_id__merge_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/jobs": {
         parameters: {
             query?: never;
@@ -662,6 +702,25 @@ export interface components {
             points: number;
             /** Factors */
             factors?: components["schemas"]["Factor"][];
+        };
+        /** DuplicateOut */
+        DuplicateOut: {
+            /**
+             * Candidate Id
+             * Format: uuid
+             */
+            candidate_id: string;
+            /** Display Name */
+            display_name: string;
+            /** Professional Title */
+            professional_title: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Reasons */
+            reasons: string[];
         };
         /** Education */
         Education: {
@@ -1254,6 +1313,14 @@ export interface components {
             requirements_validated: boolean;
             explanation?: components["schemas"]["Explanation"] | null;
         };
+        /** MergeIn */
+        MergeIn: {
+            /**
+             * Duplicate Id
+             * Format: uuid
+             */
+            duplicate_id: string;
+        };
         /** ProfileCorrectionOut */
         ProfileCorrectionOut: {
             candidate: components["schemas"]["CandidateOut"];
@@ -1327,6 +1394,16 @@ export interface components {
             /** Requirements Validated */
             requirements_validated: boolean;
             weights: components["schemas"]["ScoringWeights"];
+            /**
+             * Retrieval Mode
+             * @description all: every candidate was scored; hybrid: a retrieval shortlist was scored.
+             * @enum {string}
+             */
+            retrieval_mode: "all" | "hybrid";
+            /** Pool Size */
+            pool_size: number;
+            /** Scored */
+            scored: number;
             /** Ranked */
             ranked: components["schemas"]["RankedCandidateOut"][];
             /** Knocked Out */
@@ -1788,6 +1865,72 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_duplicates_api_candidates__candidate_id__duplicates_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                candidate_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DuplicateOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    merge_api_candidates__candidate_id__merge_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                candidate_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MergeIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CandidateOut"];
+                };
             };
             /** @description Validation Error */
             422: {
