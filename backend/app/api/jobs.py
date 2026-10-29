@@ -8,11 +8,12 @@ from sqlalchemy import select
 from app.db import JobRecord
 from app.matching import ENGINE_VERSION, ScoringWeights
 from app.models import JobProfile
-from app.services.matching import job_weights, rank_candidates, set_job_weights
+from app.services.matching import job_weights, rank_candidates, score, set_job_weights
+from app.services.pipeline import job_applications
 from app.services.profiles import create_job_from_text, validate_job_requirements
 
 from .deps import AppSettings, DbSession, Llm, domain_errors, get_or_404
-from .schemas import JobIn, JobOut, RankedCandidateOut, RankingOut
+from .schemas import ApplicationOut, JobIn, JobOut, JobStatusIn, RankedCandidateOut, RankingOut
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
 
@@ -69,3 +70,23 @@ def get_job_ranking(
         ranked=[RankedCandidateOut.build(r, blind=blind) for r in passed],
         knocked_out=[RankedCandidateOut.build(r, blind=blind) for r in knocked_out],
     )
+
+
+@router.patch("/{job_id}")
+def set_job_status(job_id: uuid.UUID, body: JobStatusIn, db: DbSession) -> JobOut:
+    """Open or close a job (closed jobs are not recommended to candidates)."""
+    record = get_or_404(lambda: db.get(JobRecord, job_id), "job")
+    record.status = body.status
+    db.commit()
+    return JobOut.from_record(record)
+
+
+@router.get("/{job_id}/applications")
+def list_applications(
+    job_id: uuid.UUID, db: DbSession, blind: bool = Query(False, description="Hide candidate names.")
+) -> list[ApplicationOut]:
+    """The job's pipeline, with each candidate's current score."""
+    record = get_or_404(lambda: db.get(JobRecord, job_id), "job")
+    return [
+        ApplicationOut.build(a, blind=blind, result=score(a.candidate, record)) for a in job_applications(db, record)
+    ]

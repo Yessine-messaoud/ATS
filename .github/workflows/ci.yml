@@ -34,10 +34,14 @@ jobs:
       - run: uv sync --frozen
       - run: uv run ruff check .
       - run: uv run ruff format --check .
-      - run: uv run mypy app tests examples eval migrations/env.py
+      - run: uv run mypy app tests examples eval scripts migrations/env.py
       - run: uv run alembic upgrade head
       - run: uv run alembic check
       - run: uv run pytest -rs
+      - name: Frontend API types are up to date
+        run: |
+          uv run python -m scripts.export_openapi /tmp/openapi.json
+          diff -u ../frontend/src/lib/openapi.json /tmp/openapi.json
 
   frontend:
     runs-on: ubuntu-latest
@@ -53,4 +57,5 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
       - run: npm run lint
+      - run: npx next typegen && npm run typecheck
       - run: npm run build

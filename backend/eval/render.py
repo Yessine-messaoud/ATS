@@ -45,6 +45,8 @@ def render_pdf(text: str, *, hidden_lines: list[str] | None = None) -> bytes:
     for index, hidden in enumerate(hidden_lines or []):
         point = (MARGIN, first.rect.height - MARGIN + index * 8)
         first.insert_text(point, pdf_safe(hidden), fontsize=6, fontname="helv", color=(1, 1, 1))
-    data: bytes = document.tobytes()
+    # Deterministic bytes (no random document id, no timestamps), so the same text always gives the same SHA-256.
+    document.set_metadata({})
+    data: bytes = document.tobytes(no_new_id=True)
     document.close()
     return data

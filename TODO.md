@@ -75,16 +75,24 @@ A phase is complete when its **Done when** line is true.
 
 ## Phase 3 — ATS UI (Next.js)
 
-- [ ] Replace the template page and metadata. Install shadcn/ui. Generate a typed API client from the OpenAPI schema
-- [ ] Jobs list + create a job (paste text → review and edit the requirement grid)
-- [ ] Candidate upload (drag & drop, several files) with extraction status
-- [ ] Profile review screen: extracted fields next to their evidence, unverified items highlighted, editable
-- [ ] Ranking view per job: score breakdown, knocked-out candidates in a separate tab
-- [ ] Kanban pipeline with stages. Every move is a logged human decision
-- [ ] Blind screening toggle
-- [ ] Recruiter corrections saved as feedback data
+- [x] Replaced the template page and metadata. Typed API client generated from the OpenAPI schema (`npm run gen:api`), with a CI drift check. shadcn/ui not added (its CLI fetches code from an external registry); small Tailwind primitives in `components/ui.tsx` instead
+- [x] Backend-for-frontend: Server Components and Server Actions call FastAPI from the server; reads use `connection()` (request-time rendering, build never needs the backend)
+- [x] Jobs list + create a job (paste text → review and edit the requirement grid → validate)
+- [x] Candidate upload (drag & drop, several files, uploaded one at a time) with per-file status and flags
+- [x] Profile review screen: each item next to its evidence; unverified items highlighted; recruiter can confirm or remove them, edit title, seniority and language levels; source document text, hidden text and injection warnings; original file viewer (sandboxed)
+- [x] Ranking view per job: score bars, matched/missing required skills, knocked-out candidates in a separate section with reasons
+- [x] Match detail page: dimensions, factors, knock-outs, explanation with dropped claims, interview questions
+- [x] Kanban pipeline with stages (drag-and-drop + keyboard-accessible menu, optimistic updates). Every move is a logged human decision (`application.stage_changed`)
+- [x] Blind screening toggle (ranking and pipeline; names replaced by `Candidate xxxxxxxx`, verified absent from the HTML)
+- [x] Recruiter corrections saved as feedback data: the first extraction is kept in `extracted_profile`, and the audit log records changed paths only (no personal data)
+- [x] Per-job weights page; job open/closed status
+- [x] Demo seed script (`scripts/seed_demo.py`, idempotent, no LLM); frontend Docker image; `docker compose up` runs the full stack
+- [ ] Authentication and per-recruiter audit actor (currently `recruiter`)
+- [ ] Browser end-to-end tests (Playwright) for the interactive flows: upload, save review, drag-and-drop
+- [ ] Highlight evidence quotes inside the source document text
+- [ ] Interface in French as well as English (i18n)
 
-**Done when:** a recruiter can go from a job description and 10 PDFs to a ranked shortlist and a Kanban pipeline.
+**Done when:** a recruiter can go from a job description and 10 PDFs to a ranked shortlist and a Kanban pipeline. *(Done, except that creating jobs and uploading CVs need an `ANTHROPIC_API_KEY`; the demo seed covers the rest without one.)*
 
 ## Phase 4 — Semantic search & taxonomy
 

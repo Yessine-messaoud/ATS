@@ -2,28 +2,56 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any
 
 import pymupdf
 import pytest
-from sqlalchemy import text
+from alembic import command
+from alembic.config import Config
+from sqlalchemy import Engine, create_engine, make_url, text
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
 
-from app.db import get_engine
+from app.config import get_settings
 from app.extraction import ToolCallResult, ToolSpec
+
+BACKEND = Path(__file__).parents[1]
+
+
+@pytest.fixture(scope="session")
+def test_engine() -> Iterator[Engine]:
+    """A dedicated `<name>_test` database, created and migrated once per run, so tests never see dev data."""
+    url = make_url(get_settings().database_url)
+    test_url = url.set(database=f"{url.database}_test")
+    admin = create_engine(url.set(database="postgres"), isolation_level="AUTOCOMMIT")
+    try:
+        with admin.connect() as connection:
+            exists = connection.scalar(
+                text("SELECT 1 FROM pg_database WHERE datname = :name"), {"name": test_url.database}
+            )
+            if not exists:
+                connection.execute(text(f'CREATE DATABASE "{test_url.database}"'))
+    except OperationalError:
+        pytest.skip("Postgres is not reachable; run `docker compose up -d postgres`")
+    finally:
+        admin.dispose()
+
+    config = Config(str(BACKEND / "alembic.ini"))
+    config.set_main_option("script_location", str(BACKEND / "migrations"))
+    config.set_main_option("sqlalchemy.url", test_url.render_as_string(hide_password=False).replace("%", "%%"))
+    command.upgrade(config, "head")
+
+    engine = create_engine(test_url)
+    yield engine
+    engine.dispose()
 
 
 @pytest.fixture
-def db() -> Iterator[Session]:
+def db(test_engine: Engine) -> Iterator[Session]:
     """A session inside a transaction that is rolled back after the test; commits become savepoints."""
-    try:
-        connection = get_engine().connect()
-    except OperationalError:
-        pytest.skip("Postgres is not reachable; run `docker compose up -d postgres` and `alembic upgrade head`")
-
+    connection = test_engine.connect()
     transaction = connection.begin()
-    connection.execute(text("SELECT 1 FROM alembic_version"))
     session = Session(bind=connection, join_transaction_mode="create_savepoint")
     try:
         yield session

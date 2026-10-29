@@ -1,36 +1,44 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ATS frontend (Next.js 16)
 
-## Getting Started
+Recruiter interface: jobs and requirement validation, CV upload and evidence review, explainable ranking,
+pipeline board.
 
-First, run the development server:
+## Architecture
+
+- **Backend-for-frontend.** Pages are Server Components that call the FastAPI backend from the server
+  (`src/lib/api.ts`). Mutations are Server Actions (`src/app/actions.ts`). The browser never talks to the backend:
+  no CORS, and `API_URL` is a server-only variable.
+- **Always live data.** Reads call `connection()`, so pages render at request time and `next build` never contacts
+  the backend.
+- **Typed against the API.** `src/lib/api-types.ts` is generated from the backend's OpenAPI schema. CI fails if it is
+  out of date. After changing a backend endpoint, run:
+
+  ```bash
+  npm run gen:api
+  ```
+
+- The original uploaded CV is streamed through `/candidates/[id]/file`, served with a `sandbox` CSP.
+
+## Pages
+
+| Route | Purpose |
+|---|---|
+| `/jobs` | Job list. Paste a job description to create a job. |
+| `/jobs/[id]` | Ranking. Candidates meeting the mandatory criteria first, the others listed separately; blind screening toggle; add to pipeline; score details. |
+| `/jobs/[id]/requirements` | Review and validate the extracted requirements (required/preferred, levels, evidence). |
+| `/jobs/[id]/pipeline` | Kanban board (drag-and-drop or menu). Each move is logged as a recruiter decision. |
+| `/jobs/[id]/weights` | Per-job scoring weights, missing-skill penalty, knock-outs on/off. |
+| `/candidates` | Candidate list with review flags; multi-file CV upload. |
+| `/candidates/[id]` | Profile review: each item next to its evidence; confirm or remove unverified items; source document and security flags; best matching jobs. |
+| `/matches/[id]` | Score breakdown, mandatory criteria, explanation (fact-checked), interview questions. |
+
+## Development
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cp .env.example .env.local    # API_URL=http://localhost:8000
+npm install
+npm run dev                   # http://localhost:3000
+npm run lint && npx next typegen && npm run typecheck
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+For demo data without an LLM key, run `uv run python -m scripts.seed_demo` in `backend/`.

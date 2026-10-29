@@ -15,7 +15,7 @@ from app.extraction import CANDIDATE_TARGET, JOB_TARGET, LLMClient, extract
 from app.ingestion import FileKind, ingest_document
 from app.ingestion.injection import detect_prompt_injection
 from app.ingestion.pipeline import DocumentFlag
-from app.models import JobProfile, SourceType
+from app.models import CandidateProfile, JobProfile, SourceType
 
 SOURCE_TYPES = {FileKind.EMAIL: SourceType.EMAIL}
 
@@ -136,3 +136,42 @@ def validate_job_requirements(db: Session, job: JobRecord, profile: JobProfile, 
     db.add(AuditLogRecord(actor=actor, action="job.requirements_validated", entity_type="job", entity_id=job.id))
     db.commit()
     return job
+
+
+def _changed_paths(before: object, after: object, path: str = "") -> list[str]:
+    """Paths whose values differ (values themselves are never returned: they may be personal data)."""
+    if isinstance(before, dict) and isinstance(after, dict):
+        keys = sorted(before.keys() | after.keys())
+        return [p for key in keys for p in _changed_paths(before.get(key), after.get(key), f"{path}.{key}".lstrip("."))]
+    if isinstance(before, list) and isinstance(after, list) and len(before) == len(after):
+        return [
+            p for i, (b, a) in enumerate(zip(before, after, strict=True)) for p in _changed_paths(b, a, f"{path}[{i}]")
+        ]
+    return [] if before == after else [path or "<root>"]
+
+
+def correct_candidate_profile(
+    db: Session, candidate: CandidateRecord, profile: CandidateProfile, *, actor: str
+) -> list[str]:
+    """Store the recruiter-corrected profile. The first extraction is kept as feedback data for evaluation."""
+    corrected = profile.model_dump(mode="json")
+    changed = _changed_paths(candidate.profile, corrected)
+    if not changed:
+        return []
+    meta = dict(candidate.extraction_meta)
+    meta.setdefault("extracted_profile", candidate.profile)
+    meta["corrections"] = [*meta.get("corrections", []), {"actor": actor, "changed_paths": changed}]
+    candidate.extraction_meta = meta
+    candidate.profile = corrected
+    candidate.email = profile.identity.email
+    db.add(
+        AuditLogRecord(
+            actor=actor,
+            action="candidate.profile_corrected",
+            entity_type="candidate",
+            entity_id=candidate.id,
+            details={"changed_paths": changed},
+        )
+    )
+    db.commit()
+    return changed

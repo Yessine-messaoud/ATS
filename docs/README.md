@@ -9,7 +9,7 @@ AI recruitment and job matching platform. See [`description.txt`](../description
   - `app/models/`: canonical Pydantic profiles (also used as the LLM structured-output schema)
   - `app/db/`: SQLAlchemy records
   - `migrations/`: Alembic migrations
-- `frontend/`: Next.js application
+- `frontend/`: Next.js recruiter interface (see [`frontend/README.md`](../frontend/README.md))
 - `docker-compose.yml`: Postgres 16 with pgvector, plus the backend container
 - `.github/workflows/ci.yml`: lint, type-check, migrations and tests on every push and PR
 
@@ -37,7 +37,8 @@ npm install
 npm run dev                  # http://localhost:3000
 ```
 
-To run the whole backend in Docker instead: `docker compose up -d --build`. The image includes Tesseract, so OCR
+To run the whole stack in Docker instead: `docker compose up -d --build`, then open http://localhost:3000.
+Load demo data without an LLM key: `docker compose exec backend python -m scripts.seed_demo`. The image includes Tesseract, so OCR
 for scanned CVs works there. Locally, OCR is skipped (and flagged) unless Tesseract is installed.
 
 ### Claude API key (CV and job extraction)
@@ -83,7 +84,7 @@ Interactive docs: http://localhost:8000/docs. Extraction quality is measured wit
 cd backend
 uv run pytest                # DB tests are skipped if Postgres is not running
 uv run ruff check . && uv run ruff format .
-uv run mypy app tests examples eval migrations/env.py
+uv run mypy app tests examples eval scripts migrations/env.py
 uv run alembic revision --autogenerate -m "describe change"   # after changing app/db/records.py
 
 # Optional: run the same checks on every commit
