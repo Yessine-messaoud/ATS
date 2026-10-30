@@ -10,6 +10,7 @@ from typing import Any
 
 from rapidfuzz import fuzz
 
+from app.matching.knockouts import language_key
 from app.models import CandidateProfile, JobProfile, RequirementKind
 
 FUZZY_MATCH = 88
@@ -116,7 +117,10 @@ def score_sets(predicted: Iterable[str], gold: Iterable[str], *, lenient: bool =
 
 
 def _language_score(predicted: dict[str, str | None], gold: dict[str, str | None]) -> SetScore:
-    # Compare names first, then levels only where the gold states one.
+    # Compare names first, then levels only where the gold states one. Names go through the matching engine's
+    # normalisation ("Anglais" = "English"): a name the engine reads correctly is a correct extraction.
+    predicted = {language_key(name): level for name, level in predicted.items()}
+    gold = {language_key(name): level for name, level in gold.items()}
     score = SetScore()
     for name, level in gold.items():
         found = next((p for p in predicted if _matches(p, name)), None)

@@ -22,6 +22,8 @@ export type Recommendation = Schemas["RecommendedJobOut"];
 export type Stage = Schemas["ApplicationOut"]["stage"];
 export type Duplicate = Schemas["DuplicateOut"];
 export type Conversation = Schemas["ConversationOut"];
+export type AuditEntry = Schemas["AuditEntryOut"];
+export type Erasure = Schemas["ErasureOut"];
 
 const API_URL = process.env.API_URL ?? "http://localhost:8000";
 
@@ -81,4 +83,8 @@ export const api = {
   match: (id: string) => read<Match>(`/api/matches/${id}`),
   duplicates: (id: string) => read<Duplicate[]>(`/api/candidates/${id}/duplicates`),
   conversation: (id: string) => read<Conversation>(`/api/agent/conversations/${id}`),
+  audit: (filters: Record<string, string | undefined>) => {
+    const query = new URLSearchParams(Object.entries(filters).filter((e): e is [string, string] => !!e[1]));
+    return read<AuditEntry[]>(`/api/audit?${query}`);
+  },
 };

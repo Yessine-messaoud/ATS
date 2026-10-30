@@ -12,6 +12,7 @@ import {
   type Candidate,
   type CandidateProfile,
   type Conversation,
+  type Erasure,
   type Job,
   type JobProfileInput,
   type Match,
@@ -157,4 +158,27 @@ export async function decideAgentActions(
   } catch (error) {
     return { error: error instanceof ApiError ? error.message : "The assistant is unavailable" };
   }
+}
+
+export async function setConsent(candidateId: string, consent: boolean): Promise<ActionState> {
+  try {
+    await sendJson<Candidate>(`/api/candidates/${candidateId}/consent`, "PUT", { consent });
+  } catch (error) {
+    return failure(error);
+  }
+  revalidatePath(`/candidates/${candidateId}`);
+  return { ok: consent ? "Consent recorded." : "Consent withdrawal recorded." };
+}
+
+export async function eraseCandidate(candidateId: string, reason: string): Promise<ActionState> {
+  try {
+    await request<Erasure>(
+      `/api/candidates/${candidateId}?reason=${encodeURIComponent(reason || "candidate request")}`,
+      { method: "DELETE" },
+    );
+  } catch (error) {
+    return failure(error);
+  }
+  revalidatePath("/candidates", "layout");
+  redirect("/candidates?erased=1");
 }

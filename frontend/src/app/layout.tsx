@@ -30,6 +30,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             <Link href="/assistant" className="text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100">
               Assistant
             </Link>
+            <Link href="/audit" className="text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100">
+              Audit log
+            </Link>
+            <Link href="/privacy" className="text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100">
+              Candidate notice
+            </Link>
             <span className="ml-auto text-xs text-zinc-500">Decision support: every decision is made by a recruiter.</span>
           </nav>
         </header>

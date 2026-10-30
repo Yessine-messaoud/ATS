@@ -19,6 +19,8 @@ class CandidateOut(BaseModel):
     created_at: datetime
     profile: CandidateProfile
     extraction: dict[str, Any]
+    talent_pool_consent: bool | None = Field(description="Consent to be matched to other jobs; null = not asked.")
+    consent_updated_at: datetime | None
 
     @classmethod
     def from_record(cls, record: CandidateRecord) -> CandidateOut:
@@ -27,6 +29,8 @@ class CandidateOut(BaseModel):
             created_at=record.created_at,
             profile=CandidateProfile.model_validate(record.profile),
             extraction=record.extraction_meta,
+            talent_pool_consent=record.talent_pool_consent,
+            consent_updated_at=record.consent_updated_at,
         )
 
 
@@ -122,6 +126,31 @@ class CandidateDocumentOut(BaseModel):
     raw_text: str | None
     hidden_text: list[str]
     injection_snippets: list[str]
+    purge_after: datetime | None
+    purged_at: datetime | None
+
+
+class ConsentIn(BaseModel):
+    consent: bool
+
+
+class ErasureOut(BaseModel):
+    candidate_id: uuid.UUID
+    documents: int
+    applications: int
+    matches: int
+    conversations: int
+    audit_entries_redacted: int
+
+
+class AuditEntryOut(BaseModel):
+    id: uuid.UUID
+    created_at: datetime
+    actor: str
+    action: str
+    entity_type: str
+    entity_id: uuid.UUID | None
+    details: dict[str, Any]
 
 
 class JobStatusIn(BaseModel):

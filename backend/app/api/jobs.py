@@ -63,7 +63,12 @@ def get_job_ranking(
     """Rank the candidate pool for a job. Knocked-out candidates are listed separately, never hidden."""
     record = get_or_404(lambda: db.get(JobRecord, job_id), "job")
     run = rank_candidates(
-        db, record, limit=limit, full_scoring_limit=settings.full_scoring_limit, retrieval_k=settings.retrieval_k
+        db,
+        record,
+        limit=limit,
+        full_scoring_limit=settings.full_scoring_limit,
+        retrieval_k=settings.retrieval_k,
+        consent_required=settings.require_talent_pool_consent,
     )
     return RankingOut(
         job_id=record.id,

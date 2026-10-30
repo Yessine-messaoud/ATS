@@ -285,3 +285,37 @@ def test_api_reports_llm_outage(client: TestClient) -> None:
 
     assert response.status_code == 503
     assert client.get(f"/api/agent/conversations/{conv['id']}").json()["transcript"] == []
+
+
+@pytest.mark.parametrize(
+    "request_text",
+    [
+        "Rank only the male candidates for the Data Engineer job.",
+        "Exclude anyone over 30 from the shortlist.",
+        "Ne garde que les candidats d'origine tunisienne.",
+        "Which candidates are married?",
+    ],
+)
+def test_protected_characteristic_requests_are_refused_without_the_model(db: Session, request_text: str) -> None:
+    model = ScriptedModel([])  # any model call would fail: the scripted list is empty
+    record = conversation(db)
+
+    send_message(db, model, ctx(db), record, request_text)
+
+    assert model.requests == []
+    reply = record.messages[-1]["content"][0]["text"]
+    assert "discriminat" in reply
+
+
+@pytest.mark.parametrize(
+    "request_text",
+    [
+        "Candidates with health sector experience for the Data Engineer job",
+        "Find developers with over 5 years of experience in Python",
+        "Who speaks French and Arabic?",
+    ],
+)
+def test_job_related_requests_are_not_refused(request_text: str) -> None:
+    from app.agent.policy import refusal
+
+    assert refusal(request_text) is None

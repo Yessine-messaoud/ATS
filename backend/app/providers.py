@@ -31,7 +31,7 @@ def make_llm(settings: Settings, *, effort: str | None = None) -> LLMClient:
 
 def make_agent_model(settings: Settings, *, effort: str | None = None) -> AgentModel:
     if settings.llm_provider == "ollama":
-        return OllamaAgentModel(ollama_options(settings))
+        return OllamaAgentModel(ollama_options(settings), tool_mode=settings.ollama_tool_mode)
     return AnthropicAgentModel(
         model=settings.llm_model, effort=effort or settings.llm_effort, max_tokens=settings.llm_max_tokens
     )

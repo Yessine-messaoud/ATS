@@ -1,3 +1,4 @@
+import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
@@ -6,6 +7,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api import router as api_router
 from app.config import get_settings
+from app.security.crypto import get_cipher
+from app.security.logs import install_pii_filter
 from app.services.taxonomy import activate_stored_taxonomy
 
 settings = get_settings()
@@ -13,6 +16,12 @@ settings = get_settings()
 
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+    install_pii_filter()
+    problems = settings.production_problems()
+    if problems and settings.app_env == "production":
+        raise RuntimeError("refusing to start in production: " + "; ".join(problems))
+    for problem in problems:
+        logging.getLogger("app").warning(problem)
     activate_stored_taxonomy()
     yield
 
@@ -33,5 +42,5 @@ def read_root() -> dict[str, str]:
 
 
 @app.get("/health")
-def healthcheck() -> dict[str, str]:
-    return {"status": "ok"}
+def healthcheck() -> dict[str, object]:
+    return {"status": "ok", "llm_provider": settings.llm_provider, "document_encryption": get_cipher().enabled}

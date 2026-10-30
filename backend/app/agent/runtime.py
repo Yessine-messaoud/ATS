@@ -19,6 +19,7 @@ from app.db import AgentConversationRecord
 from app.extraction.validation import format_errors
 
 from .model import AgentModel, ModelTurn
+from .policy import refusal
 from .prompts import AGENT_PROMPT_VERSION, SYSTEM_PROMPT
 from .tools import TOOLS, ToolContext, ToolError, describe_action
 
@@ -159,7 +160,12 @@ def send_message(
     content.append({"type": "text", "text": text})
     messages.append({"role": "user", "content": content})
     stats = TurnStats()
-    pending = run_loop(model, ctx, messages, stats)
+    if (refused := refusal(text)) is not None:
+        # Protected-characteristic requests are refused by policy, without consulting the model.
+        messages.append({"role": "assistant", "content": [{"type": "text", "text": refused}]})
+        pending = None
+    else:
+        pending = run_loop(model, ctx, messages, stats)
     _save(conversation, messages, pending, stats)
     db.commit()
 

@@ -32,6 +32,11 @@ pipeline board.
 | `/candidates/[id]` | Profile review: each item next to its evidence; confirm or remove unverified items; source document and security flags; best matching jobs. |
 | `/assistant`, `/assistant/[id]` | Chat with the recruitment assistant; approve or decline the actions it proposes; optional blind mode. |
 | `/matches/[id]` | Score breakdown, mandatory criteria, explanation (fact-checked), interview questions. |
+| `/audit` | Audit log viewer: filter by record, action group or actor; page through older entries. |
+| `/privacy` | Candidate transparency notice (how AI is used, retention, rights), built from the live configuration. |
+
+The candidate page also has a **Privacy** card: talent-pool consent, a JSON export of all the candidate's data
+(`/candidates/[id]/export`), and erasure with a typed confirmation.
 
 ## Development
 

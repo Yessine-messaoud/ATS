@@ -3,19 +3,23 @@ from __future__ import annotations
 import uuid
 
 from fastapi import APIRouter, HTTPException, Query, Response, UploadFile, status
+from fastapi.responses import JSONResponse
 from sqlalchemy import select
 
-from app.db import CandidateRecord, DocumentRecord
+from app.db import AuditLogRecord, CandidateRecord, DocumentRecord
 from app.models import CandidateProfile
 from app.services.dedup import MergeConflict, find_duplicates, merge_candidates
 from app.services.matching import recommend_jobs
+from app.services.privacy import erase_candidate, export_candidate, set_consent
 from app.services.profiles import correct_candidate_profile, create_candidate_from_upload
 
 from .deps import AppSettings, DbSession, Llm, domain_errors, get_or_404
 from .schemas import (
     CandidateDocumentOut,
     CandidateOut,
+    ConsentIn,
     DuplicateOut,
+    ErasureOut,
     MergeIn,
     ProfileCorrectionOut,
     RecommendedJobOut,
@@ -49,11 +53,14 @@ def get_candidate(candidate_id: uuid.UUID, db: DbSession) -> CandidateOut:
 
 @router.get("/{candidate_id}/recommendations")
 def get_recommendations(
-    candidate_id: uuid.UUID, db: DbSession, limit: int = Query(10, ge=1, le=100)
+    candidate_id: uuid.UUID, db: DbSession, settings: AppSettings, limit: int = Query(10, ge=1, le=100)
 ) -> list[RecommendedJobOut]:
     """Open jobs ranked for this candidate (jobs passing knock-outs first)."""
     record = get_or_404(lambda: db.get(CandidateRecord, candidate_id), "candidate")
-    return [RecommendedJobOut.build(r) for r in recommend_jobs(db, record, limit=limit)]
+    consent_required = settings.require_talent_pool_consent
+    return [
+        RecommendedJobOut.build(r) for r in recommend_jobs(db, record, limit=limit, consent_required=consent_required)
+    ]
 
 
 @router.put("/{candidate_id}/profile")
@@ -88,6 +95,8 @@ def get_document(candidate_id: uuid.UUID, db: DbSession) -> CandidateDocumentOut
         raw_text=document.raw_text,
         hidden_text=record.extraction_meta.get("hidden_text", []),
         injection_snippets=record.extraction_meta.get("injection_snippets", []),
+        purge_after=document.purge_after,
+        purged_at=document.purged_at,
     )
 
 
@@ -95,7 +104,8 @@ def get_document(candidate_id: uuid.UUID, db: DbSession) -> CandidateDocumentOut
 def get_document_file(candidate_id: uuid.UUID, db: DbSession) -> Response:
     _, document = _document(db, candidate_id)
     if document.content is None:
-        raise HTTPException(404, "original file not stored")
+        detail = "original file purged under the retention policy" if document.purged_at else "original file not stored"
+        raise HTTPException(404, detail)
     return Response(
         content=document.content,
         media_type=document.mime_type or "application/octet-stream",
@@ -126,3 +136,32 @@ def merge(candidate_id: uuid.UUID, body: MergeIn, db: DbSession) -> CandidateOut
     except MergeConflict as exc:
         raise HTTPException(409, str(exc)) from exc
     return CandidateOut.from_record(merged)
+
+
+@router.put("/{candidate_id}/consent")
+def update_consent(candidate_id: uuid.UUID, body: ConsentIn, db: DbSession) -> CandidateOut:
+    """Record the candidate's talent-pool consent (to be matched to jobs they did not apply to)."""
+    record = get_or_404(lambda: db.get(CandidateRecord, candidate_id), "candidate")
+    return CandidateOut.from_record(set_consent(db, record, body.consent, actor="recruiter"))
+
+
+@router.get("/{candidate_id}/export")
+def export_data(candidate_id: uuid.UUID, db: DbSession, settings: AppSettings) -> JSONResponse:
+    """Everything held about the candidate (GDPR access and portability), as a JSON download."""
+    record = get_or_404(lambda: db.get(CandidateRecord, candidate_id), "candidate")
+    data = export_candidate(db, record, settings)
+    db.add(AuditLogRecord(actor="recruiter", action="candidate.exported", entity_type="candidate", entity_id=record.id))
+    db.commit()
+    return JSONResponse(data, headers={"Content-Disposition": f'attachment; filename="candidate-{candidate_id}.json"'})
+
+
+@router.delete("/{candidate_id}")
+def erase(
+    candidate_id: uuid.UUID,
+    db: DbSession,
+    reason: str = Query("candidate request", max_length=200, description="Why the data is erased (audit log)."),
+) -> ErasureOut:
+    """Erase the candidate and all their personal data (GDPR right to erasure). Irreversible."""
+    record = get_or_404(lambda: db.get(CandidateRecord, candidate_id), "candidate")
+    report = erase_candidate(db, record, actor="recruiter", reason=reason)
+    return ErasureOut(candidate_id=report.candidate_id, **report.as_details())

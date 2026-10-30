@@ -52,7 +52,11 @@ export interface paths {
         get: operations["get_candidate_api_candidates__candidate_id__get"];
         put?: never;
         post?: never;
-        delete?: never;
+        /**
+         * Erase
+         * @description Erase the candidate and all their personal data (GDPR right to erasure). Irreversible.
+         */
+        delete: operations["erase_api_candidates__candidate_id__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -171,6 +175,46 @@ export interface paths {
          * @description Merge `duplicate_id` into this candidate (recruiter-confirmed). The duplicate record is deleted.
          */
         post: operations["merge_api_candidates__candidate_id__merge_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/candidates/{candidate_id}/consent": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Update Consent
+         * @description Record the candidate's talent-pool consent (to be matched to jobs they did not apply to).
+         */
+        put: operations["update_consent_api_candidates__candidate_id__consent_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/candidates/{candidate_id}/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export Data
+         * @description Everything held about the candidate (GDPR access and portability), as a JSON download.
+         */
+        get: operations["export_data_api_candidates__candidate_id__export_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -452,6 +496,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/audit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Audit Entries
+         * @description Most recent first. Decisions, AI outputs, corrections and privacy operations are all recorded here.
+         */
+        get: operations["list_audit_entries_api_audit_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/privacy/policy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Policy */
+        get: operations["policy_api_privacy_policy_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/": {
         parameters: {
             query?: never;
@@ -543,6 +624,31 @@ export interface components {
          * @enum {string}
          */
         ApplicationStage: "new" | "screening" | "interview" | "offer" | "hired" | "rejected" | "withdrawn";
+        /** AuditEntryOut */
+        AuditEntryOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Actor */
+            actor: string;
+            /** Action */
+            action: string;
+            /** Entity Type */
+            entity_type: string;
+            /** Entity Id */
+            entity_id: string | null;
+            /** Details */
+            details: {
+                [key: string]: unknown;
+            };
+        };
         /** Body_upload_candidate_api_candidates_upload_post */
         Body_upload_candidate_api_candidates_upload_post: {
             /** File */
@@ -564,6 +670,10 @@ export interface components {
             hidden_text: string[];
             /** Injection Snippets */
             injection_snippets: string[];
+            /** Purge After */
+            purge_after: string | null;
+            /** Purged At */
+            purged_at: string | null;
         };
         /** CandidateIdentity */
         CandidateIdentity: {
@@ -607,6 +717,13 @@ export interface components {
             extraction: {
                 [key: string]: unknown;
             };
+            /**
+             * Talent Pool Consent
+             * @description Consent to be matched to other jobs; null = not asked.
+             */
+            talent_pool_consent: boolean | null;
+            /** Consent Updated At */
+            consent_updated_at: string | null;
         };
         /**
          * CandidateProfile
@@ -740,6 +857,11 @@ export interface components {
          * @enum {string}
          */
         CompensationPeriod: "hour" | "day" | "month" | "year";
+        /** ConsentIn */
+        ConsentIn: {
+            /** Consent */
+            consent: boolean;
+        };
         /**
          * ContractType
          * @enum {string}
@@ -909,6 +1031,24 @@ export interface components {
              * @description Explicitly accepted equivalent experience or education.
              */
             equivalent_education?: string | null;
+        };
+        /** ErasureOut */
+        ErasureOut: {
+            /**
+             * Candidate Id
+             * Format: uuid
+             */
+            candidate_id: string;
+            /** Documents */
+            documents: number;
+            /** Applications */
+            applications: number;
+            /** Matches */
+            matches: number;
+            /** Conversations */
+            conversations: number;
+            /** Audit Entries Redacted */
+            audit_entries_redacted: number;
         };
         /** Experience */
         Experience: {
@@ -1454,6 +1594,26 @@ export interface components {
             /** Summary */
             summary: string;
         };
+        /** PrivacyPolicyOut */
+        PrivacyPolicyOut: {
+            /** Document Retention Days */
+            document_retention_days: number;
+            /** Candidate Retention Days */
+            candidate_retention_days: number;
+            /** Talent Pool Consent Required */
+            talent_pool_consent_required: boolean;
+            /** Documents Encrypted */
+            documents_encrypted: boolean;
+            /**
+             * Ai Provider
+             * @enum {string}
+             */
+            ai_provider: "ollama" | "anthropic";
+            /** Ai Runs Locally */
+            ai_runs_locally: boolean;
+            /** Scoring Engine */
+            scoring_engine: string;
+        };
         /** ProfileCorrectionOut */
         ProfileCorrectionOut: {
             candidate: components["schemas"]["CandidateOut"];
@@ -1882,6 +2042,40 @@ export interface operations {
             };
         };
     };
+    erase_api_candidates__candidate_id__delete: {
+        parameters: {
+            query?: {
+                /** @description Why the data is erased (audit log). */
+                reason?: string;
+            };
+            header?: never;
+            path: {
+                candidate_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErasureOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_recommendations_api_candidates__candidate_id__recommendations_get: {
         parameters: {
             query?: {
@@ -2063,6 +2257,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CandidateOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_consent_api_candidates__candidate_id__consent_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                candidate_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConsentIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CandidateOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_data_api_candidates__candidate_id__export_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                candidate_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */
@@ -2611,6 +2871,64 @@ export interface operations {
             };
         };
     };
+    list_audit_entries_api_audit_get: {
+        parameters: {
+            query?: {
+                /** @description Entries about this record or naming it. */
+                entity_id?: string | null;
+                /** @description Exact action, or a prefix ending with '.'. */
+                action?: string | null;
+                actor?: string | null;
+                /** @description Only entries older than this (paging). */
+                before?: string | null;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuditEntryOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    policy_api_privacy_policy_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PrivacyPolicyOut"];
+                };
+            };
+        };
+    };
     read_root__get: {
         parameters: {
             query?: never;
@@ -2649,7 +2967,7 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        [key: string]: string;
+                        [key: string]: unknown;
                     };
                 };
             };

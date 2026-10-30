@@ -102,7 +102,7 @@ def test_agent_tool_calls_are_converted_to_tool_use_blocks() -> None:
     http, requests = client(
         lambda _: reply("Let me look.", [{"function": {"name": "list_jobs", "arguments": {"status": "open"}}}])
     )
-    turn = OllamaAgentModel(OllamaOptions(), client=http).respond(
+    turn = OllamaAgentModel(OllamaOptions(), tool_mode="native", client=http).respond(
         system="sys", tools=[t.spec() for t in TOOLS.values()], messages=[{"role": "user", "content": "Jobs?"}]
     )
 
@@ -161,3 +161,68 @@ def test_provider_factory() -> None:
     assert type(make_llm(Settings(llm_provider="anthropic"))).__name__ == "AnthropicLLM"
     assert type(make_agent_model(Settings(llm_provider="ollama"))).__name__ == "OllamaAgentModel"
     assert type(make_agent_model(Settings(llm_provider="anthropic"))).__name__ == "AnthropicAgentModel"
+
+
+# --- structured tool mode ---------------------------------------------------------------------------------------------
+
+JOB_ID = "c221af5c-ca6f-4b91-9ff8-c02bd8b12699"
+SPECS = [t.spec() for t in TOOLS.values()]
+
+
+def scripted(*contents: str) -> tuple[httpx.Client, list[dict[str, Any]]]:
+    replies = iter(contents)
+    return client(lambda _: reply(next(replies)))
+
+
+def test_structured_first_step_must_call_a_tool_and_hides_id_tools() -> None:
+    http, requests = scripted('{"must_refuse": false, "next": "list_jobs"}', '{"status": "open"}')
+    turn = OllamaAgentModel(OllamaOptions(), client=http).respond(
+        system="sys", tools=SPECS, messages=[{"role": "user", "content": "Which jobs are open?"}]
+    )
+
+    assert turn.stop_reason == "tool_use"
+    assert turn.content[0]["name"] == "list_jobs" and turn.content[0]["input"] == {"status": "open"}
+    router = requests[0]["format"]
+    assert "answer" not in router["properties"]["next"]["enum"]  # no answer before any lookup
+    assert "get_job" not in router["properties"]["next"]["enum"]  # needs an id, none known yet
+    assert "must_refuse" in router["required"]
+    assert "tools" not in requests[0]  # no native tool calling
+    assert turn.input_tokens == 100  # both calls counted
+
+
+def test_structured_ids_are_restricted_to_ids_seen_in_tool_results() -> None:
+    history: list[dict[str, Any]] = [
+        {"role": "user", "content": "Rank candidates for the Data Engineer job"},
+        {"role": "assistant", "content": [{"type": "tool_use", "id": "t1", "name": "list_jobs", "input": {}}]},
+        {
+            "role": "user",
+            "content": [{"type": "tool_result", "tool_use_id": "t1", "content": f'[{{"job_id": "{JOB_ID}"}}]'}],
+        },
+    ]
+    http, requests = scripted(
+        '{"request_answered": false, "next": "rank_candidates_for_job"}', f'{{"job_id": "{JOB_ID}", "limit": 3}}'
+    )
+    turn = OllamaAgentModel(OllamaOptions(), client=http).respond(system="sys", tools=SPECS, messages=history)
+
+    assert turn.content[0]["input"] == {"job_id": JOB_ID, "limit": 3}
+    assert requests[1]["format"]["properties"]["job_id"]["enum"] == [JOB_ID]
+    sent = requests[0]["messages"]
+    assert sent[2] == {"role": "assistant", "content": "I call `list_jobs` with {}."}
+    assert sent[3]["role"] == "user" and sent[3]["content"].startswith("Result of `list_jobs`:")
+
+
+def test_structured_answer_and_loop_guard() -> None:
+    history: list[dict[str, Any]] = [
+        {"role": "user", "content": "Which jobs are open?"},
+        {"role": "assistant", "content": [{"type": "tool_use", "id": "t1", "name": "list_jobs", "input": {}}]},
+        {"role": "user", "content": [{"type": "tool_result", "tool_use_id": "t1", "content": "[]"}]},
+    ]
+    http, requests = scripted('{"request_answered": true, "next": "answer"}', "No job is open.")
+    turn = OllamaAgentModel(OllamaOptions(), client=http).respond(system="sys", tools=SPECS, messages=history)
+    assert turn.stop_reason == "end_turn" and turn.content == [{"type": "text", "text": "No job is open."}]
+    assert "Which jobs are open?" in requests[1]["messages"][-1]["content"]
+
+    # The model asks for the very same call again: it answers instead of looping.
+    http, _ = scripted('{"request_answered": false, "next": "list_jobs"}', "{}", "Still no job.")
+    turn = OllamaAgentModel(OllamaOptions(), client=http).respond(system="sys", tools=SPECS, messages=history)
+    assert turn.content == [{"type": "text", "text": "Still no job."}]

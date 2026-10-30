@@ -38,6 +38,7 @@ class ToolContext:
     blind: bool
     full_scoring_limit: int
     retrieval_k: int
+    consent_required: bool = False
 
 
 # --- inputs ----------------------------------------------------------------------------------------------------------
@@ -138,10 +139,10 @@ def list_jobs(ctx: ToolContext, args: ListJobsIn) -> Any:
 def search_candidates(ctx: ToolContext, args: SearchCandidatesIn) -> Any:
     keywords = [w for w in normalize_text(args.query).split() if len(w) > 1]
     hits = hybrid_search(ctx.db, args.query, keywords, k=args.limit)
-    records = {
-        r.id: r
-        for r in ctx.db.scalars(select(CandidateRecord).where(CandidateRecord.id.in_([h.candidate_id for h in hits])))
-    }
+    query = select(CandidateRecord).where(CandidateRecord.id.in_([h.candidate_id for h in hits]))
+    if ctx.consent_required:
+        query = query.where(CandidateRecord.talent_pool_consent.is_(True))
+    records = {r.id: r for r in ctx.db.scalars(query)}
     return [_candidate_brief(ctx, records[h.candidate_id]) for h in hits if h.candidate_id in records]
 
 
@@ -197,7 +198,12 @@ def get_job(ctx: ToolContext, args: JobIdIn) -> Any:
 def rank_candidates_for_job(ctx: ToolContext, args: RankIn) -> Any:
     job = _job(ctx, args.job_id)
     run = rank_candidates(
-        ctx.db, job, limit=args.limit, full_scoring_limit=ctx.full_scoring_limit, retrieval_k=ctx.retrieval_k
+        ctx.db,
+        job,
+        limit=args.limit,
+        full_scoring_limit=ctx.full_scoring_limit,
+        retrieval_k=ctx.retrieval_k,
+        consent_required=ctx.consent_required,
     )
 
     def row(ranked: Any) -> dict[str, Any]:
@@ -265,7 +271,7 @@ def recommend_jobs_for_candidate(ctx: ToolContext, args: RecommendIn) -> Any:
             "passed_mandatory_criteria": r.result.passed_knockouts,
             "missing_required": r.result.missing_required,
         }
-        for r in recommend_jobs(ctx.db, candidate, limit=args.limit)
+        for r in recommend_jobs(ctx.db, candidate, limit=args.limit, consent_required=ctx.consent_required)
     ]
 
 

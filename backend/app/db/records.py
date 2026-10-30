@@ -2,7 +2,7 @@
 
 Validated domain profiles (`app.models`) are stored as JSONB together with their schema version.
 Raw source text lives only on `DocumentRecord` so that it can be purged under the retention policy
-without touching the structured profiles.
+without touching the structured profiles. The original file and its text are encrypted at rest.
 """
 
 from __future__ import annotations
@@ -21,7 +21,6 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     Integer,
-    LargeBinary,
     String,
     Text,
     UniqueConstraint,
@@ -31,6 +30,7 @@ from sqlalchemy.dialects.postgresql import JSONB, TSVECTOR
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base, IdMixin, TimestampMixin
+from .types import EncryptedBytes, EncryptedText
 
 
 class ApplicationStage(StrEnum):
@@ -53,10 +53,11 @@ class DocumentRecord(IdMixin, TimestampMixin, Base):
     mime_type: Mapped[str | None] = mapped_column(String(127))
     size_bytes: Mapped[int | None] = mapped_column(Integer)
     sha256: Mapped[str] = mapped_column(String(64), index=True)
-    content: Mapped[bytes | None] = mapped_column(LargeBinary)
-    raw_text: Mapped[str | None] = mapped_column(Text)
+    content: Mapped[bytes | None] = mapped_column(EncryptedBytes)
+    raw_text: Mapped[str | None] = mapped_column(EncryptedText)
     flags: Mapped[list[str]] = mapped_column(JSONB, default=list)
-    purge_after: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    purge_after: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
+    purged_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
 class CandidateRecord(IdMixin, TimestampMixin, Base):
@@ -67,6 +68,9 @@ class CandidateRecord(IdMixin, TimestampMixin, Base):
     email: Mapped[str | None] = mapped_column(String(320), index=True)
     source_document_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("documents.id", ondelete="SET NULL"))
     extraction_meta: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
+    # Consent to be kept in the talent pool and matched to other jobs. None = not asked yet.
+    talent_pool_consent: Mapped[bool | None] = mapped_column()
+    consent_updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     applications: Mapped[list[ApplicationRecord]] = relationship(back_populates="candidate")
 

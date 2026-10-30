@@ -28,6 +28,8 @@ class Settings(BaseSettings):
     ollama_num_ctx: int = 8192
     # Layers offloaded to the GPU; 99 = all. Empty lets Ollama decide (it keeps some layers on the CPU of 6 GB GPUs).
     ollama_num_gpu: int | None = 99
+    # Assistant tool calling: "structured" (router + schema-constrained arguments; any model) or "native".
+    ollama_tool_mode: Literal["structured", "native"] = "structured"
     ollama_keep_alive: str = "30m"
     ollama_timeout_s: float = 600.0
 
@@ -44,9 +46,26 @@ class Settings(BaseSettings):
     ocr_languages: str = "eng+fra"
     document_retention_days: int = 180
 
+    # Privacy. Comma-separated Fernet keys; the first encrypts, all decrypt (rotation). Generate one with
+    # `python -m app.security.crypto`. Required in production.
+    document_encryption_keys: str | None = None
+    # Candidates with no activity for this long, and without talent-pool consent, are erased by the retention job.
+    candidate_retention_days: int = 730
+    # When on, a job's ranking only includes candidates who consented to the talent pool or applied to that job.
+    require_talent_pool_consent: bool = False
+
     # Retrieval: pools up to this size are scored exhaustively; larger pools are shortlisted by hybrid retrieval.
     full_scoring_limit: int = 500
     retrieval_k: int = 200
+
+    def production_problems(self) -> list[str]:
+        """Settings that are acceptable in development but not with real candidate data."""
+        problems = []
+        if not self.document_encryption_keys:
+            problems.append("DOCUMENT_ENCRYPTION_KEYS is not set: documents would be stored unencrypted")
+        if self.debug:
+            problems.append("DEBUG is on")
+        return problems
 
 
 @lru_cache

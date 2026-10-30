@@ -80,6 +80,7 @@ def _context(db: DbSession, settings: AppSettings, conversation: AgentConversati
         blind=conversation.blind,
         full_scoring_limit=settings.full_scoring_limit,
         retrieval_k=settings.retrieval_k,
+        consent_required=settings.require_talent_pool_consent,
     )
 
 

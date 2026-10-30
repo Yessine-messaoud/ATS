@@ -75,6 +75,11 @@ If the LLM is unreachable, the API still runs: AI endpoints return `503`, and th
 | `POST /api/agent/conversations` | `{"blind": false}`: start an assistant conversation. |
 | `POST /api/agent/conversations/{id}/messages` | `{"text"}`: the assistant answers, using tools; actions it proposes are returned as `pending_actions`. |
 | `POST /api/agent/conversations/{id}/decisions` | `{"decisions": [{"tool_use_id", "approved"}]}`: confirm or decline proposed actions. |
+| `PUT /api/candidates/{id}/consent` | `{"consent": true}`: talent-pool consent (audit logged). |
+| `GET /api/candidates/{id}/export` | Everything held about the candidate, as a JSON download (GDPR access and portability). |
+| `DELETE /api/candidates/{id}?reason=` | Erase the candidate: profile, documents (merged ones too), applications, scores, and assistant conversations that mention them. Irreversible. |
+| `GET /api/audit?entity_id=&action=&actor=&before=` | Audit log, newest first. `action` ending with `.` filters by prefix (`candidate.`). |
+| `GET /api/privacy/policy` | Retention periods, encryption and AI set-up, used by the candidate notice (`/privacy`). |
 
 ### Search and taxonomy (Phase 4)
 
@@ -116,8 +121,42 @@ uv run pre-commit install --config ../.pre-commit-config.yaml
 ```
 
 
+### Privacy and security (Phase 6)
+
+- **Encryption at rest.** Uploaded files and their extracted text are encrypted with Fernet (AES-128-CBC +
+  HMAC-SHA256). Generate a key with `uv run python -m app.security.crypto` and set `DOCUMENT_ENCRYPTION_KEYS`. With
+  `APP_ENV=production` the API refuses to start without one. To rotate keys, put the new key first
+  (`new,old`), run `uv run python -m scripts.encrypt_documents`, then remove the old key. The same script encrypts
+  rows written before a key was set. `--decrypt` reverses it.
+- **Retention.** `uv run python -m scripts.retention [--dry-run]`, run daily. Document content is deleted after
+  `DOCUMENT_RETENTION_DAYS` (180); the metadata and hash stay, so duplicates are still detected. Candidates without
+  talent-pool consent and without activity for `CANDIDATE_RETENTION_DAYS` (730) are erased. Everything is audited.
+- **Consent.** `REQUIRE_TALENT_POOL_CONSENT=true` limits each job's ranking (and the assistant's searches and
+  recommendations) to candidates who consented, plus the job's own applicants.
+- **Personal data in logs.** A logging filter masks e-mail addresses and phone numbers in every record, including
+  tracebacks.
+- **Protected characteristics.** They are removed from extracted profiles by a deterministic pass after the LLM
+  (marital status, birth date and age, nationality, religion, gender, health), and requests to filter or judge on
+  them are refused by the assistant's policy guard before any model call.
+- **Test suites in CI.** `tests/test_fairness.py` holds counterfactual tests: names from several origins, gendered
+  French titles and protected mentions must leave the whole match result unchanged. `tests/test_adversarial.py`
+  covers hidden text, keyword stuffing and prompt injection: the file must be flagged, planted skills must stay
+  unverified, and the score must equal the clean CV's.
+
 ### Assistant (Phase 5)
 
 A tool-calling agent (`app/agent`) over the same services: it searches, ranks, explains, compares, prepares interviews
 and drafts emails. It cannot set a score (scores come from the engine) and cannot change data on its own: adding to
 a pipeline or moving a stage is proposed, then confirmed or declined by the recruiter, and audit-logged.
+
+With a local model, the assistant uses **structured tool calling** by default (`OLLAMA_TOOL_MODE=structured`).
+
+1. A JSON-constrained call picks the next step: a tool from an enum, or `answer`. On the first step it may only pick
+   a tool or refuse, so it cannot answer before looking anything up.
+2. A second call fills that tool's arguments under its JSON schema. Id parameters are restricted to ids that already
+   appeared in tool results, so the model cannot invent one.
+3. Repeating an identical call ends the step loop.
+
+This works with models that have no tool support at all. `native` uses Ollama's tool calling; it suits models
+trained for it (qwen2.5, llama3.1) and is unreliable with mistral 7B, which stops calling tools once it is offered
+more than a few.

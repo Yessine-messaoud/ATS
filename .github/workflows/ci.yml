@@ -37,6 +37,8 @@ jobs:
       - run: uv run mypy app tests examples eval scripts migrations/env.py
       - run: uv run alembic upgrade head
       - run: uv run alembic check
+      - name: Fairness and adversarial suites
+        run: uv run pytest -rs tests/test_fairness.py tests/test_adversarial.py
       - run: uv run pytest -rs
       - name: Frontend API types are up to date
         run: |

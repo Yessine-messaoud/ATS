@@ -6,6 +6,7 @@ import { ApiError, api, type CandidateDocument } from "@/lib/api";
 import { FLAG_LABELS } from "@/lib/enums";
 
 import { Duplicates } from "./duplicates";
+import { PrivacyPanel } from "./privacy-panel";
 import { ProfileReview } from "./profile-review";
 
 export async function generateMetadata(props: PageProps<"/candidates/[id]">): Promise<Metadata> {
@@ -78,14 +79,20 @@ export default async function CandidatePage(props: PageProps<"/candidates/[id]">
           <Card
             title="Source document"
             actions={
-              document && (
+              document &&
+              !document.purged_at && (
                 <a href={`/candidates/${id}/file`} target="_blank" rel="noreferrer" className="text-xs underline">
                   Open original
                 </a>
               )
             }
           >
-            {document ? (
+            {document?.purged_at ? (
+              <Empty>
+                Deleted on {new Date(document.purged_at).toLocaleDateString("en-GB")} under the retention policy. The
+                extracted profile is kept.
+              </Empty>
+            ) : document ? (
               <>
                 <div className="mb-2 flex flex-wrap gap-1">
                   {document.flags.map((flag) => (
@@ -102,6 +109,12 @@ export default async function CandidatePage(props: PageProps<"/candidates/[id]">
               <Empty>No source document stored.</Empty>
             )}
           </Card>
+          <PrivacyPanel
+            candidateId={candidate.id}
+            consent={candidate.talent_pool_consent}
+            consentUpdatedAt={candidate.consent_updated_at}
+            purgeAfter={document?.purged_at ? null : (document?.purge_after ?? null)}
+          />
           <Card title="Best matching open jobs">
             {recommendations.length === 0 ? (
               <Empty>No open jobs.</Empty>

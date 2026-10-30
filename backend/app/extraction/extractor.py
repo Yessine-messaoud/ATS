@@ -12,6 +12,7 @@ from app.models import CandidateProfile, JobProfile
 from .evidence import EvidenceStats, verify_evidence
 from .llm import LLMClient, ToolCallResult, ToolSpec
 from .prompts import CV_PROMPT_VERSION, CV_SYSTEM_PROMPT, JOB_PROMPT_VERSION, JOB_SYSTEM_PROMPT, document_prompt
+from .protected import scrub_protected
 from .sections import detect_sections
 from .validation import ValidationIssue, format_errors, validate_partially
 
@@ -121,6 +122,11 @@ def extract[M: BaseModel](
         if profile is None:
             raise ExtractionFailed(f"the record could not be repaired: {issues[-1].path}: {issues[-1].message}")
 
+    removed: list[str] = []
+    if target.kind == "cv":
+        cleaned, removed = scrub_protected(profile.model_dump(mode="json", exclude={"schema_version"}))
+        if removed:
+            profile = target.model.model_validate(cleaned)
     evidence = verify_evidence(profile, text)
     meta = {
         "model": calls[-1].model,
@@ -131,5 +137,6 @@ def extract[M: BaseModel](
         "latency_ms": sum(call.latency_ms for call in calls),
         "request_ids": [call.request_id for call in calls if call.request_id],
         "sections": [section.name for section in sections],
+        "protected_attributes_removed": len(removed),
     }
     return ExtractionResult(profile=profile, issues=issues, evidence=evidence, meta=meta)

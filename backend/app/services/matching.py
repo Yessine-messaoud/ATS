@@ -5,10 +5,10 @@ from __future__ import annotations
 import uuid
 from dataclasses import dataclass
 
-from sqlalchemy import func, select
+from sqlalchemy import ColumnElement, func, or_, select
 from sqlalchemy.orm import Session
 
-from app.db import AuditLogRecord, CandidateRecord, JobRecord, MatchRecord
+from app.db import ApplicationRecord, AuditLogRecord, CandidateRecord, JobRecord, MatchRecord
 from app.extraction.llm import LLMClient
 from app.matching import MatchResult, ScoringWeights, match
 from app.matching.explain import explain
@@ -86,18 +86,35 @@ class RankingRun:
     scored: int
 
 
+def pool_condition(job: JobRecord, *, consent_required: bool) -> ColumnElement[bool]:
+    """Who may be matched to a job: everyone, or (with consent required) the talent pool plus the job's applicants."""
+    if not consent_required:
+        return CandidateRecord.id.is_not(None)
+    applicants = select(ApplicationRecord.candidate_id).where(ApplicationRecord.job_id == job.id)
+    return or_(CandidateRecord.talent_pool_consent.is_(True), CandidateRecord.id.in_(applicants))
+
+
 def rank_candidates(
-    db: Session, job: JobRecord, *, limit: int, full_scoring_limit: int, retrieval_k: int
+    db: Session,
+    job: JobRecord,
+    *,
+    limit: int,
+    full_scoring_limit: int,
+    retrieval_k: int,
+    consent_required: bool = False,
 ) -> RankingRun:
     """Score the pool for a job; above `full_scoring_limit` candidates, score only the hybrid-retrieval shortlist."""
-    pool_size = db.scalar(select(func.count()).select_from(CandidateRecord)) or 0
+    in_pool = pool_condition(job, consent_required=consent_required)
+    pool_size = db.scalar(select(func.count()).select_from(CandidateRecord).where(in_pool)) or 0
     if pool_size <= full_scoring_limit:
-        mode, candidates = "all", list(db.scalars(select(CandidateRecord)))
+        mode, candidates = "all", list(db.scalars(select(CandidateRecord).where(in_pool)))
     else:
         shortlist = retrieve_candidates(db, JobProfile.model_validate(job.profile), k=retrieval_k)
         mode = "hybrid"
         candidates = list(
-            db.scalars(select(CandidateRecord).where(CandidateRecord.id.in_([r.candidate_id for r in shortlist])))
+            db.scalars(
+                select(CandidateRecord).where(in_pool, CandidateRecord.id.in_([r.candidate_id for r in shortlist]))
+            )
         )
     scored = [Ranked(candidate, score(candidate, job)) for candidate in candidates]
     scored.sort(key=lambda r: -r.result.overall_score)
@@ -110,8 +127,14 @@ def rank_candidates(
     )
 
 
-def recommend_jobs(db: Session, candidate: CandidateRecord, *, limit: int) -> list[RecommendedJob]:
-    jobs = db.scalars(select(JobRecord).where(JobRecord.status == "open"))
+def recommend_jobs(
+    db: Session, candidate: CandidateRecord, *, limit: int, consent_required: bool = False
+) -> list[RecommendedJob]:
+    query = select(JobRecord).where(JobRecord.status == "open")
+    if consent_required and candidate.talent_pool_consent is not True:
+        applied = select(ApplicationRecord.job_id).where(ApplicationRecord.candidate_id == candidate.id)
+        query = query.where(JobRecord.id.in_(applied))
+    jobs = db.scalars(query)
     recommended = [RecommendedJob(job, score(candidate, job)) for job in jobs]
     recommended.sort(key=lambda r: (not r.result.passed_knockouts, -r.result.overall_score))
     return recommended[:limit]

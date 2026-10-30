@@ -10,11 +10,15 @@ import re
 
 PATTERNS = [
     # English
-    r"ignore\s+(all\s+|any\s+)?(the\s+)?(previous|prior|above|earlier)\s+(instructions|prompts|rules)",
-    r"disregard\s+(all\s+|any\s+)?(the\s+)?(previous|prior|above)\s+(instructions|prompts)",
+    r"(ignore|disregard|forget|override)\s+(all\s+|any\s+)?(the\s+|your\s+)?((previous|prior|above|earlier|job|"
+    r"screening|other)\s+)?(instructions|prompts|rules|requirements|criteria)",
     r"(you\s+are|act\s+as)\s+(now\s+)?(an?\s+)?(ai|assistant|language\s+model|chatgpt|claude|gpt)",
     r"system\s+prompt",
+    r"new\s+instructions\s*:",
+    r"\b(system|assistant)\s*:\s*(ignore|disregard|forget|override|you\s+(are|must)|new\s+instructions)",
     r"(rate|score|rank)\s+(this|the)\s+(candidate|applicant|cv|resume)\s+(as\s+)?(\d{2,3}|highest|top|perfect)",
+    r"(give|assign|award)\s+(me\s+|this\s+(candidate|applicant|profile|cv)\s+)?(a\s+)?(score|rating|grade)\s+of\s+\d{2,3}",
+    r"(rank|place|put|list)\s+(me|this\s+(candidate|applicant|profile))\s+(first|at\s+the\s+top|on\s+top)",
     r"(this|the)\s+(candidate|applicant)\s+is\s+(the\s+)?(perfect|ideal|best)\s+(match|fit|candidate)",
     r"note\s+to\s+(the\s+)?(ai|llm|model|recruiter\s+bot|screening\s+system)",
     # French

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { Badge, Card, Empty } from "@/components/ui";
+import { Badge, Card, Empty, Notice } from "@/components/ui";
 import { api } from "@/lib/api";
 import { FLAG_LABELS } from "@/lib/enums";
 
@@ -11,10 +11,14 @@ export const metadata: Metadata = { title: "Candidates" };
 
 const SECURITY_FLAGS = new Set(["hidden_text", "possible_prompt_injection"]);
 
-export default async function CandidatesPage() {
-  const candidates = await api.candidates();
+export default async function CandidatesPage(props: PageProps<"/candidates">) {
+  const [candidates, { erased }] = await Promise.all([api.candidates(), props.searchParams]);
 
   return (
+    <div className="space-y-4">
+    {erased && (
+      <Notice tone="green">The candidate and all their personal data were erased. The erasure is recorded in the audit log.</Notice>
+    )}
     <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
       <Card title={`Candidates (${candidates.length})`}>
         {candidates.length === 0 ? (
@@ -68,6 +72,7 @@ export default async function CandidatesPage() {
       <Card title="Upload CVs">
         <UploadDropzone />
       </Card>
+    </div>
     </div>
   );
 }

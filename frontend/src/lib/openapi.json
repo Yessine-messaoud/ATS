@@ -137,6 +137,61 @@
             }
           }
         }
+      },
+      "delete": {
+        "tags": [
+          "candidates"
+        ],
+        "summary": "Erase",
+        "description": "Erase the candidate and all their personal data (GDPR right to erasure). Irreversible.",
+        "operationId": "erase_api_candidates__candidate_id__delete",
+        "parameters": [
+          {
+            "name": "candidate_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Candidate Id"
+            }
+          },
+          {
+            "name": "reason",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 200,
+              "description": "Why the data is erased (audit log).",
+              "default": "candidate request",
+              "title": "Reason"
+            },
+            "description": "Why the data is erased (audit log)."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErasureOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/candidates/{candidate_id}/recommendations": {
@@ -419,6 +474,102 @@
                 "schema": {
                   "$ref": "#/components/schemas/CandidateOut"
                 }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/candidates/{candidate_id}/consent": {
+      "put": {
+        "tags": [
+          "candidates"
+        ],
+        "summary": "Update Consent",
+        "description": "Record the candidate's talent-pool consent (to be matched to jobs they did not apply to).",
+        "operationId": "update_consent_api_candidates__candidate_id__consent_put",
+        "parameters": [
+          {
+            "name": "candidate_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Candidate Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConsentIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/candidates/{candidate_id}/export": {
+      "get": {
+        "tags": [
+          "candidates"
+        ],
+        "summary": "Export Data",
+        "description": "Everything held about the candidate (GDPR access and portability), as a JSON download.",
+        "operationId": "export_data_api_candidates__candidate_id__export_get",
+        "parameters": [
+          {
+            "name": "candidate_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Candidate Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
               }
             }
           },
@@ -1228,6 +1379,151 @@
         }
       }
     },
+    "/api/audit": {
+      "get": {
+        "tags": [
+          "audit"
+        ],
+        "summary": "List Audit Entries",
+        "description": "Most recent first. Decisions, AI outputs, corrections and privacy operations are all recorded here.",
+        "operationId": "list_audit_entries_api_audit_get",
+        "parameters": [
+          {
+            "name": "entity_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Entries about this record or naming it.",
+              "title": "Entity Id"
+            },
+            "description": "Entries about this record or naming it."
+          },
+          {
+            "name": "action",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 64
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Exact action, or a prefix ending with '.'.",
+              "title": "Action"
+            },
+            "description": "Exact action, or a prefix ending with '.'."
+          },
+          {
+            "name": "actor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 64
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Actor"
+            }
+          },
+          {
+            "name": "before",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Only entries older than this (paging).",
+              "title": "Before"
+            },
+            "description": "Only entries older than this (paging)."
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
+              "default": 100,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AuditEntryOut"
+                  },
+                  "title": "Response List Audit Entries Api Audit Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/privacy/policy": {
+      "get": {
+        "tags": [
+          "privacy"
+        ],
+        "summary": "Policy",
+        "operationId": "policy_api_privacy_policy_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PrivacyPolicyOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/": {
       "get": {
         "summary": "Read Root",
@@ -1260,9 +1556,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "additionalProperties": {
-                    "type": "string"
-                  },
+                  "additionalProperties": true,
                   "type": "object",
                   "title": "Response Healthcheck Health Get"
                 }
@@ -1377,6 +1671,60 @@
         ],
         "title": "ApplicationStage"
       },
+      "AuditEntryOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "actor": {
+            "type": "string",
+            "title": "Actor"
+          },
+          "action": {
+            "type": "string",
+            "title": "Action"
+          },
+          "entity_type": {
+            "type": "string",
+            "title": "Entity Type"
+          },
+          "entity_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entity Id"
+          },
+          "details": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Details"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "created_at",
+          "actor",
+          "action",
+          "entity_type",
+          "entity_id",
+          "details"
+        ],
+        "title": "AuditEntryOut"
+      },
       "Body_upload_candidate_api_candidates_upload_post": {
         "properties": {
           "file": {
@@ -1450,6 +1798,30 @@
             },
             "type": "array",
             "title": "Injection Snippets"
+          },
+          "purge_after": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Purge After"
+          },
+          "purged_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Purged At"
           }
         },
         "type": "object",
@@ -1460,7 +1832,9 @@
           "flags",
           "raw_text",
           "hidden_text",
-          "injection_snippets"
+          "injection_snippets",
+          "purge_after",
+          "purged_at"
         ],
         "title": "CandidateDocumentOut"
       },
@@ -1570,6 +1944,30 @@
             "additionalProperties": true,
             "type": "object",
             "title": "Extraction"
+          },
+          "talent_pool_consent": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Talent Pool Consent",
+            "description": "Consent to be matched to other jobs; null = not asked."
+          },
+          "consent_updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consent Updated At"
           }
         },
         "type": "object",
@@ -1577,7 +1975,9 @@
           "id",
           "created_at",
           "profile",
-          "extraction"
+          "extraction",
+          "talent_pool_consent",
+          "consent_updated_at"
         ],
         "title": "CandidateOut"
       },
@@ -2345,6 +2745,19 @@
         ],
         "title": "CompensationPeriod"
       },
+      "ConsentIn": {
+        "properties": {
+          "consent": {
+            "type": "boolean",
+            "title": "Consent"
+          }
+        },
+        "type": "object",
+        "required": [
+          "consent"
+        ],
+        "title": "ConsentIn"
+      },
       "ContractType": {
         "type": "string",
         "enum": [
@@ -2758,6 +3171,45 @@
           "requirement"
         ],
         "title": "EducationRequirement"
+      },
+      "ErasureOut": {
+        "properties": {
+          "candidate_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Candidate Id"
+          },
+          "documents": {
+            "type": "integer",
+            "title": "Documents"
+          },
+          "applications": {
+            "type": "integer",
+            "title": "Applications"
+          },
+          "matches": {
+            "type": "integer",
+            "title": "Matches"
+          },
+          "conversations": {
+            "type": "integer",
+            "title": "Conversations"
+          },
+          "audit_entries_redacted": {
+            "type": "integer",
+            "title": "Audit Entries Redacted"
+          }
+        },
+        "type": "object",
+        "required": [
+          "candidate_id",
+          "documents",
+          "applications",
+          "matches",
+          "conversations",
+          "audit_entries_redacted"
+        ],
+        "title": "ErasureOut"
       },
       "Experience": {
         "properties": {
@@ -4288,6 +4740,53 @@
           "summary"
         ],
         "title": "PendingActionOut"
+      },
+      "PrivacyPolicyOut": {
+        "properties": {
+          "document_retention_days": {
+            "type": "integer",
+            "title": "Document Retention Days"
+          },
+          "candidate_retention_days": {
+            "type": "integer",
+            "title": "Candidate Retention Days"
+          },
+          "talent_pool_consent_required": {
+            "type": "boolean",
+            "title": "Talent Pool Consent Required"
+          },
+          "documents_encrypted": {
+            "type": "boolean",
+            "title": "Documents Encrypted"
+          },
+          "ai_provider": {
+            "type": "string",
+            "enum": [
+              "ollama",
+              "anthropic"
+            ],
+            "title": "Ai Provider"
+          },
+          "ai_runs_locally": {
+            "type": "boolean",
+            "title": "Ai Runs Locally"
+          },
+          "scoring_engine": {
+            "type": "string",
+            "title": "Scoring Engine"
+          }
+        },
+        "type": "object",
+        "required": [
+          "document_retention_days",
+          "candidate_retention_days",
+          "talent_pool_consent_required",
+          "documents_encrypted",
+          "ai_provider",
+          "ai_runs_locally",
+          "scoring_engine"
+        ],
+        "title": "PrivacyPolicyOut"
       },
       "ProfileCorrectionOut": {
         "properties": {
