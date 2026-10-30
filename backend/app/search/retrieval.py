@@ -41,9 +41,12 @@ def tsquery(terms: list[str]) -> str | None:
     return " | ".join(dict.fromkeys(phrases)) or None
 
 
-def retrieve_candidates(db: Session, job: JobProfile, *, k: int, embedder: Embedder | None = None) -> list[Retrieved]:
+def hybrid_search(
+    db: Session, query_text: str, keywords: list[str], *, k: int, embedder: Embedder | None = None
+) -> list[Retrieved]:
+    """Candidates closest to `query_text` (vector) and matching `keywords` (full-text), fused with RRF."""
     embedder = embedder or get_embedder()
-    query_vector = embedder.embed([job_text(job)])[0]
+    query_vector = embedder.embed([query_text])[0]
     vector_ids = list(
         db.scalars(
             select(CandidateSearchRecord.candidate_id)
@@ -52,7 +55,7 @@ def retrieve_candidates(db: Session, job: JobProfile, *, k: int, embedder: Embed
         )
     )
     text_ids: list[uuid.UUID] = []
-    query = tsquery(job_keywords(job))
+    query = tsquery(keywords)
     if query:
         ts_query = func.to_tsquery("simple", query)
         text_ids = list(
@@ -77,3 +80,7 @@ def retrieve_candidates(db: Session, job: JobProfile, *, k: int, embedder: Embed
     ]
     fused.sort(key=lambda r: -r.score)
     return fused[:k]
+
+
+def retrieve_candidates(db: Session, job: JobProfile, *, k: int, embedder: Embedder | None = None) -> list[Retrieved]:
+    return hybrid_search(db, job_text(job), job_keywords(job), k=k, embedder=embedder)

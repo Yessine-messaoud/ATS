@@ -378,6 +378,80 @@ export interface paths {
         patch: operations["change_stage_api_applications__application_id__patch"];
         trace?: never;
     };
+    "/api/agent/conversations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Conversation */
+        post: operations["create_conversation_api_agent_conversations_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/agent/conversations/{conversation_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Conversation */
+        get: operations["get_conversation_api_agent_conversations__conversation_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/agent/conversations/{conversation_id}/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Message
+         * @description Send a message. Pending actions not yet confirmed are treated as declined.
+         */
+        post: operations["post_message_api_agent_conversations__conversation_id__messages_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/agent/conversations/{conversation_id}/decisions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Decisions
+         * @description Confirm or decline the proposed actions; confirmed ones are executed, then the assistant continues.
+         */
+        post: operations["post_decisions_api_agent_conversations__conversation_id__decisions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/": {
         parameters: {
             query?: never;
@@ -671,6 +745,39 @@ export interface components {
          * @enum {string}
          */
         ContractType: "permanent" | "fixed_term" | "temporary" | "internship" | "apprenticeship" | "freelance";
+        /** ConversationIn */
+        ConversationIn: {
+            /**
+             * Blind
+             * @default false
+             */
+            blind: boolean;
+        };
+        /** ConversationOut */
+        ConversationOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Blind */
+            blind: boolean;
+            /** Transcript */
+            transcript: {
+                [key: string]: unknown;
+            }[];
+            /** Pending Actions */
+            pending_actions: components["schemas"]["PendingActionOut"][];
+            /** Usage */
+            usage: {
+                [key: string]: unknown;
+            };
+        };
         /** DateRange */
         DateRange: {
             /**
@@ -683,6 +790,18 @@ export interface components {
              * @description Known end date.
              */
             end_date?: string | null;
+        };
+        /** Decision */
+        Decision: {
+            /** Tool Use Id */
+            tool_use_id: string;
+            /** Approved */
+            approved: boolean;
+        };
+        /** DecisionsIn */
+        DecisionsIn: {
+            /** Decisions */
+            decisions: components["schemas"]["Decision"][];
         };
         /** DimensionScore */
         DimensionScore: {
@@ -1320,6 +1439,20 @@ export interface components {
              * Format: uuid
              */
             duplicate_id: string;
+        };
+        /** MessageIn */
+        MessageIn: {
+            /** Text */
+            text: string;
+        };
+        /** PendingActionOut */
+        PendingActionOut: {
+            /** Tool Use Id */
+            tool_use_id: string;
+            /** Name */
+            name: string;
+            /** Summary */
+            summary: string;
         };
         /** ProfileCorrectionOut */
         ProfileCorrectionOut: {
@@ -2331,6 +2464,140 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApplicationOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_conversation_api_agent_conversations_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConversationIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConversationOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_conversation_api_agent_conversations__conversation_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                conversation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConversationOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_message_api_agent_conversations__conversation_id__messages_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                conversation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MessageIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConversationOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_decisions_api_agent_conversations__conversation_id__decisions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                conversation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DecisionsIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConversationOut"];
                 };
             };
             /** @description Validation Error */

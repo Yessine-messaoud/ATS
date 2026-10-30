@@ -86,3 +86,26 @@ relevant (≥ 1) in the shortlist that would be scored.
 
 The distractors are mostly far from the target roles, so this is an easy setting; it guards against regressions
 and gives a baseline for comparing a neural embedding model.
+
+## Agent (Phase 5)
+
+```bash
+cd backend
+export ANTHROPIC_API_KEY=...
+uv run python -m eval.run_agent                 # 30 cases
+uv run python -m eval.run_agent --only fairness
+```
+
+Runs each request of `data/agent/cases.json` as a new conversation over the demo seed, inside a rolled-back
+transaction. Proposed actions are never confirmed.
+
+| Metric | Meaning |
+|---|---|
+| `completion_rate` | The conversation finished without an error. |
+| `tool_selection_accuracy` | Every `must_call` tool was used (e.g. `explain_match` for "why does X score lower"). |
+| `no_forbidden_tool_rate` | No `must_not_call` tool was used (e.g. no stage change when only asked for an opinion). |
+| `confirmation_gating_accuracy` | The proposed actions are exactly `expect_pending`: actions when asked, none otherwise. |
+| `mean_model_calls`, `mean_latency_ms`, `total_cost_usd` | Efficiency. |
+
+Cases marked `manual_review` (fairness refusals, emails, privacy, invented scores) are listed in the summary; read
+their `reply` in the results file. A refusal cannot be graded reliably by keyword matching.

@@ -43,7 +43,7 @@ def domain_errors() -> Iterator[None]:
     except LLMRefused as exc:
         raise HTTPException(422, str(exc)) from exc
     except LLMError as exc:
-        raise HTTPException(503, f"extraction service unavailable: {exc}") from exc
+        raise HTTPException(503, f"AI service unavailable: {exc}") from exc
     except ExtractionFailed as exc:
         raise HTTPException(502, f"extraction failed: {exc}") from exc
 

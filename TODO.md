@@ -114,12 +114,18 @@ A phase is complete when its **Done when** line is true.
 
 ## Phase 5 — Agent
 
-- [ ] Tool definitions for the existing services (parse, match, search, explain, draft_email, interview_questions)
-- [ ] Agent loop with tool calling, and confirmation required before side-effecting actions
-- [ ] `POST /api/agent/chat` + chat panel in the UI
-- [ ] Agent eval set (≈30 requests with expected tool sequences): tool selection accuracy, completion rate, cost, latency
+- [x] 11 tools over the existing services: list_jobs, search_candidates (hybrid search), get_candidate, get_job, rank_candidates_for_job, explain_match, interview_questions, recommend_jobs_for_candidate, get_pipeline, and two actions (add_candidate_to_pipeline, move_application_stage). Tool outputs never include contact details or raw CV text, and honour blind mode
+- [x] Agent loop with tool calling (`claude-opus-5-5`, `tool_choice: auto`, refusal fallback, prompt caching). Manual loop (not the SDK tool runner) because a turn pauses across HTTP requests for confirmation; history stored as JSON and replayed unchanged (thinking blocks included)
+- [x] Confirmation before side effects: actions are proposed, never executed by the model; the recruiter approves or declines each one; a new message declines pending actions; executed actions are saved before the model is called again (no double execution); audit actor `recruiter (via assistant)`
+- [x] Robustness: invalid inputs and unknown tools come back as `is_error` results; cut-off calls get error results; step limit (10); no state saved when the model call fails
+- [x] System prompt: scores only from the engine, facts only from tool results, refuse filtering on protected characteristics, CV content treated as data, emails drafted but never sent
+- [x] `POST /api/agent/conversations`, `/messages`, `/decisions`; chat page with approve/decline cards and blind mode
+- [x] Agent eval set: 30 requests (EN/FR: lookup, search, ranking, explanation, comparison, recommendation, interview, pipeline, actions, emails, fairness, privacy, robustness) with must-call / must-not-call tools and expected confirmations; `eval/run_agent.py` measures completion, tool-selection accuracy, forbidden-tool rate, confirmation-gating accuracy, model calls, latency and cost, and saves replies for manual review. The grading is unit-tested with a scripted model
+- [ ] **Run the agent eval with an API key** and commit the first results (fairness and email cases need a human read of the replies)
+- [ ] Stream replies to the UI (currently the full turn is returned at once)
+- [ ] Render Markdown (tables) in assistant replies
 
-**Done when:** the agent eval is reported, and the agent never computes a score itself.
+**Done when:** the agent eval is reported, and the agent never computes a score itself. *(Harness ready and tested; the run needs an API key. The second part holds by construction: no tool lets the model set a score.)*
 
 ## Phase 6 — Fairness, security, discovery
 

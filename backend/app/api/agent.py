@@ -1,0 +1,129 @@
+from __future__ import annotations
+
+import uuid
+from datetime import datetime
+from functools import lru_cache
+from typing import Annotated, Any
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel, Field
+
+from app.agent.model import AgentModel, AnthropicAgentModel
+from app.agent.runtime import NoPendingAction, decide, send_message, transcript
+from app.agent.tools import ToolContext
+from app.config import get_settings
+from app.db import AgentConversationRecord
+
+from .deps import AppSettings, DbSession, domain_errors, get_or_404
+
+router = APIRouter(prefix="/agent", tags=["assistant"])
+
+
+@lru_cache
+def get_agent_model() -> AgentModel:
+    settings = get_settings()
+    return AnthropicAgentModel(model=settings.llm_model, effort=settings.llm_effort, max_tokens=settings.llm_max_tokens)
+
+
+Model = Annotated[AgentModel, Depends(get_agent_model)]
+
+
+class ConversationIn(BaseModel):
+    blind: bool = False
+
+
+class MessageIn(BaseModel):
+    text: str = Field(min_length=1, max_length=4000)
+
+
+class Decision(BaseModel):
+    tool_use_id: str
+    approved: bool
+
+
+class DecisionsIn(BaseModel):
+    decisions: list[Decision] = Field(min_length=1)
+
+
+class PendingActionOut(BaseModel):
+    tool_use_id: str
+    name: str
+    summary: str
+
+
+class ConversationOut(BaseModel):
+    id: uuid.UUID
+    created_at: datetime
+    blind: bool
+    transcript: list[dict[str, Any]]
+    pending_actions: list[PendingActionOut]
+    usage: dict[str, Any]
+
+    @classmethod
+    def from_record(cls, record: AgentConversationRecord) -> ConversationOut:
+        actions = (record.pending or {}).get("actions", [])
+        return cls(
+            id=record.id,
+            created_at=record.created_at,
+            blind=record.blind,
+            transcript=transcript(record),
+            pending_actions=[
+                PendingActionOut(**{k: a[k] for k in ("tool_use_id", "name", "summary")}) for a in actions
+            ],
+            usage=record.usage or {},
+        )
+
+
+def _context(db: DbSession, settings: AppSettings, conversation: AgentConversationRecord) -> ToolContext:
+    return ToolContext(
+        db=db,
+        blind=conversation.blind,
+        full_scoring_limit=settings.full_scoring_limit,
+        retrieval_k=settings.retrieval_k,
+    )
+
+
+@router.post("/conversations", status_code=status.HTTP_201_CREATED)
+def create_conversation(body: ConversationIn, db: DbSession) -> ConversationOut:
+    conversation = AgentConversationRecord(blind=body.blind, messages=[], usage={})
+    db.add(conversation)
+    db.commit()
+    return ConversationOut.from_record(conversation)
+
+
+@router.get("/conversations/{conversation_id}")
+def get_conversation(conversation_id: uuid.UUID, db: DbSession) -> ConversationOut:
+    return ConversationOut.from_record(
+        get_or_404(lambda: db.get(AgentConversationRecord, conversation_id), "conversation")
+    )
+
+
+@router.post("/conversations/{conversation_id}/messages")
+def post_message(
+    conversation_id: uuid.UUID, body: MessageIn, db: DbSession, model: Model, settings: AppSettings
+) -> ConversationOut:
+    """Send a message. Pending actions not yet confirmed are treated as declined."""
+    conversation = get_or_404(lambda: db.get(AgentConversationRecord, conversation_id), "conversation")
+    with domain_errors():
+        send_message(db, model, _context(db, settings, conversation), conversation, body.text)
+    return ConversationOut.from_record(conversation)
+
+
+@router.post("/conversations/{conversation_id}/decisions")
+def post_decisions(
+    conversation_id: uuid.UUID, body: DecisionsIn, db: DbSession, model: Model, settings: AppSettings
+) -> ConversationOut:
+    """Confirm or decline the proposed actions; confirmed ones are executed, then the assistant continues."""
+    conversation = get_or_404(lambda: db.get(AgentConversationRecord, conversation_id), "conversation")
+    try:
+        with domain_errors():
+            decide(
+                db,
+                model,
+                _context(db, settings, conversation),
+                conversation,
+                {d.tool_use_id: d.approved for d in body.decisions},
+            )
+    except NoPendingAction as exc:
+        raise HTTPException(409, str(exc)) from exc
+    return ConversationOut.from_record(conversation)

@@ -190,3 +190,14 @@ class TaxonomyBroaderRecord(Base):
 
     narrower_uri: Mapped[str] = mapped_column(String(255), primary_key=True)
     broader_uri: Mapped[str] = mapped_column(String(255), primary_key=True)
+
+
+class AgentConversationRecord(IdMixin, TimestampMixin, Base):
+    """An assistant conversation: the full API message history (replayed unchanged) and any pending actions."""
+
+    __tablename__ = "agent_conversations"
+
+    blind: Mapped[bool] = mapped_column(default=False)
+    messages: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, default=list)
+    pending: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    usage: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)

@@ -63,6 +63,9 @@ the tests use a scripted fake LLM.
 | `GET /api/candidates/{id}/recommendations` | Open jobs ranked for a candidate. |
 | `GET /api/candidates/{id}/duplicates` | Possible duplicates (same email or phone, or similar name + near-identical profile). |
 | `POST /api/candidates/{id}/merge` | `{"duplicate_id"}`: recruiter-confirmed merge (applications and match history move; audit logged). |
+| `POST /api/agent/conversations` | `{"blind": false}`: start an assistant conversation. |
+| `POST /api/agent/conversations/{id}/messages` | `{"text"}`: the assistant answers, using tools; actions it proposes are returned as `pending_actions`. |
+| `POST /api/agent/conversations/{id}/decisions` | `{"decisions": [{"tool_use_id", "approved"}]}`: confirm or decline proposed actions. |
 
 ### Search and taxonomy (Phase 4)
 
@@ -102,3 +105,10 @@ uv run alembic revision --autogenerate -m "describe change"   # after changing a
 # Optional: run the same checks on every commit
 uv run pre-commit install --config ../.pre-commit-config.yaml
 ```
+
+
+### Assistant (Phase 5)
+
+A tool-calling agent (`app/agent`) over the same services: it searches, ranks, explains, compares, prepares interviews
+and drafts emails. It cannot set a score (scores come from the engine) and cannot change data on its own: adding to
+a pipeline or moving a stage is proposed, then confirmed or declined by the recruiter, and audit-logged.

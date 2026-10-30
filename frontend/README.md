@@ -30,6 +30,7 @@ pipeline board.
 | `/jobs/[id]/weights` | Per-job scoring weights, missing-skill penalty, knock-outs on/off. |
 | `/candidates` | Candidate list with review flags; multi-file CV upload. |
 | `/candidates/[id]` | Profile review: each item next to its evidence; confirm or remove unverified items; source document and security flags; best matching jobs. |
+| `/assistant`, `/assistant/[id]` | Chat with the recruitment assistant; approve or decline the actions it proposes; optional blind mode. |
 | `/matches/[id]` | Score breakdown, mandatory criteria, explanation (fact-checked), interview questions. |
 
 ## Development

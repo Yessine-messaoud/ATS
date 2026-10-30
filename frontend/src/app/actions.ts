@@ -11,6 +11,7 @@ import {
   type Application,
   type Candidate,
   type CandidateProfile,
+  type Conversation,
   type Job,
   type JobProfileInput,
   type Match,
@@ -124,4 +125,36 @@ export async function mergeCandidates(keepId: string, duplicateId: string): Prom
   }
   revalidatePath("/candidates", "layout");
   return { ok: "Merged." };
+}
+
+export async function startConversation(formData: FormData): Promise<void> {
+  const conversation = await sendJson<Conversation>("/api/agent/conversations", "POST", {
+    blind: formData.get("blind") === "on",
+  });
+  redirect(`/assistant/${conversation.id}`);
+}
+
+export type ConversationResult = { conversation?: Conversation; error?: string };
+
+export async function sendAgentMessage(conversationId: string, text: string): Promise<ConversationResult> {
+  try {
+    const path = `/api/agent/conversations/${conversationId}/messages`;
+    return { conversation: await sendJson<Conversation>(path, "POST", { text }) };
+  } catch (error) {
+    return { error: error instanceof ApiError ? error.message : "The assistant is unavailable" };
+  }
+}
+
+export async function decideAgentActions(
+  conversationId: string,
+  decisions: { tool_use_id: string; approved: boolean }[],
+): Promise<ConversationResult> {
+  try {
+    const path = `/api/agent/conversations/${conversationId}/decisions`;
+    const conversation = await sendJson<Conversation>(path, "POST", { decisions });
+    revalidatePath("/jobs", "layout");
+    return { conversation };
+  } catch (error) {
+    return { error: error instanceof ApiError ? error.message : "The assistant is unavailable" };
+  }
 }

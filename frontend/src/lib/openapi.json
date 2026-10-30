@@ -1036,6 +1036,198 @@
         }
       }
     },
+    "/api/agent/conversations": {
+      "post": {
+        "tags": [
+          "assistant"
+        ],
+        "summary": "Create Conversation",
+        "operationId": "create_conversation_api_agent_conversations_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConversationIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/agent/conversations/{conversation_id}": {
+      "get": {
+        "tags": [
+          "assistant"
+        ],
+        "summary": "Get Conversation",
+        "operationId": "get_conversation_api_agent_conversations__conversation_id__get",
+        "parameters": [
+          {
+            "name": "conversation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Conversation Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/agent/conversations/{conversation_id}/messages": {
+      "post": {
+        "tags": [
+          "assistant"
+        ],
+        "summary": "Post Message",
+        "description": "Send a message. Pending actions not yet confirmed are treated as declined.",
+        "operationId": "post_message_api_agent_conversations__conversation_id__messages_post",
+        "parameters": [
+          {
+            "name": "conversation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Conversation Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MessageIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/agent/conversations/{conversation_id}/decisions": {
+      "post": {
+        "tags": [
+          "assistant"
+        ],
+        "summary": "Post Decisions",
+        "description": "Confirm or decline the proposed actions; confirmed ones are executed, then the assistant continues.",
+        "operationId": "post_decisions_api_agent_conversations__conversation_id__decisions_post",
+        "parameters": [
+          {
+            "name": "conversation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Conversation Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DecisionsIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/": {
       "get": {
         "summary": "Read Root",
@@ -2165,6 +2357,65 @@
         ],
         "title": "ContractType"
       },
+      "ConversationIn": {
+        "properties": {
+          "blind": {
+            "type": "boolean",
+            "title": "Blind",
+            "default": false
+          }
+        },
+        "type": "object",
+        "title": "ConversationIn"
+      },
+      "ConversationOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "blind": {
+            "type": "boolean",
+            "title": "Blind"
+          },
+          "transcript": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Transcript"
+          },
+          "pending_actions": {
+            "items": {
+              "$ref": "#/components/schemas/PendingActionOut"
+            },
+            "type": "array",
+            "title": "Pending Actions"
+          },
+          "usage": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Usage"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "created_at",
+          "blind",
+          "transcript",
+          "pending_actions",
+          "usage"
+        ],
+        "title": "ConversationOut"
+      },
       "DateRange": {
         "properties": {
           "start_date": {
@@ -2197,6 +2448,41 @@
         "additionalProperties": false,
         "type": "object",
         "title": "DateRange"
+      },
+      "Decision": {
+        "properties": {
+          "tool_use_id": {
+            "type": "string",
+            "title": "Tool Use Id"
+          },
+          "approved": {
+            "type": "boolean",
+            "title": "Approved"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tool_use_id",
+          "approved"
+        ],
+        "title": "Decision"
+      },
+      "DecisionsIn": {
+        "properties": {
+          "decisions": {
+            "items": {
+              "$ref": "#/components/schemas/Decision"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Decisions"
+          }
+        },
+        "type": "object",
+        "required": [
+          "decisions"
+        ],
+        "title": "DecisionsIn"
       },
       "DimensionScore": {
         "properties": {
@@ -3964,6 +4250,44 @@
           "duplicate_id"
         ],
         "title": "MergeIn"
+      },
+      "MessageIn": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Text"
+          }
+        },
+        "type": "object",
+        "required": [
+          "text"
+        ],
+        "title": "MessageIn"
+      },
+      "PendingActionOut": {
+        "properties": {
+          "tool_use_id": {
+            "type": "string",
+            "title": "Tool Use Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "summary": {
+            "type": "string",
+            "title": "Summary"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tool_use_id",
+          "name",
+          "summary"
+        ],
+        "title": "PendingActionOut"
       },
       "ProfileCorrectionOut": {
         "properties": {

@@ -2,6 +2,7 @@
 
 from .base import Base
 from .records import (
+    AgentConversationRecord,
     ApplicationRecord,
     ApplicationStage,
     AuditLogRecord,
@@ -17,6 +18,7 @@ from .records import (
 from .session import get_engine, get_session
 
 __all__ = [
+    "AgentConversationRecord",
     "ApplicationRecord",
     "ApplicationStage",
     "AuditLogRecord",
