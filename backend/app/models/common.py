@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from datetime import date
 from decimal import Decimal
 from enum import StrEnum
@@ -18,6 +19,9 @@ NonNegativeFloat = Annotated[float, Field(ge=0, allow_inf_nan=False)]
 
 
 def _validate_http_url(value: str) -> str:
+    # CVs often write "linkedin.com/in/name"; treat a scheme-less host/path as HTTPS rather than rejecting it.
+    if "://" not in value and re.match(r"^[\w-]+(\.[\w-]+)+(/|$)", value):
+        value = f"https://{value}"
     parsed = urlparse(value)
     if parsed.scheme not in {"http", "https"} or not parsed.netloc:
         raise ValueError("url must be an absolute HTTP or HTTPS URL")

@@ -18,7 +18,20 @@ class Settings(BaseSettings):
     database_url: str = "postgresql+psycopg://localhost:5432/ats_db"
     cors_origins: list[str] = ["http://localhost:3000"]
 
-    # LLM extraction. Credentials are resolved by the Anthropic SDK (ANTHROPIC_API_KEY or an `ant auth login` profile).
+    # Which LLM backs extraction, explanations and the assistant: a local model served by Ollama (no API key), or
+    # Claude. Local inference is free and keeps CVs on the machine; Claude extracts more accurately and faster.
+    llm_provider: Literal["ollama", "anthropic"] = "ollama"
+
+    # Ollama. The model must support tool calling for the assistant (`ollama show <model>` lists "tools").
+    ollama_url: str = "http://localhost:11434"
+    ollama_model: str = "mistral"
+    ollama_num_ctx: int = 8192
+    # Layers offloaded to the GPU; 99 = all. Empty lets Ollama decide (it keeps some layers on the CPU of 6 GB GPUs).
+    ollama_num_gpu: int | None = 99
+    ollama_keep_alive: str = "30m"
+    ollama_timeout_s: float = 600.0
+
+    # Claude. Credentials are resolved by the Anthropic SDK (ANTHROPIC_API_KEY or an `ant auth login` profile).
     llm_model: str = "claude-opus-5-5"
     llm_effort: Literal["low", "medium", "high", "xhigh", "max"] = "medium"
     llm_max_tokens: int = 16000

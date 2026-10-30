@@ -1,7 +1,8 @@
 """Run the extraction eval against the real LLM and write a dated report to eval/results/.
 
 Usage (from backend/):  uv run python -m eval.run_extraction [--only en-01] [--effort medium]
-Costs real API money: roughly one LLM call per document, more when a correction round is needed.
+Uses the configured provider: local Ollama by default (free), or Claude with LLM_PROVIDER=anthropic, which costs
+real API money: roughly one LLM call per document, more when a correction round is needed.
 """
 
 from __future__ import annotations
@@ -15,8 +16,9 @@ from typing import Any
 
 from app.config import Settings
 from app.extraction import CANDIDATE_TARGET, JOB_TARGET, ExtractionFailed, LLMError, extract
-from app.extraction.anthropic_client import AnthropicLLM
+from app.extraction.llm import LLMClient
 from app.ingestion import ingest_document
+from app.providers import make_llm, model_label
 
 from .metrics import SetScore, score_candidate, score_job
 from .render import render_pdf
@@ -24,7 +26,7 @@ from .render import render_pdf
 DATA = Path(__file__).parent / "data"
 RESULTS = Path(__file__).parent / "results"
 # USD per million tokens for the default model (claude-opus-5-5); update when changing models.
-PRICE_INPUT, PRICE_OUTPUT = 4.00, 20.00
+PRICE_INPUT, PRICE_OUTPUT = 4.00, 20.00  # local models cost nothing
 
 
 def _cases(kind: str, only: str | None) -> list[tuple[str, str, dict[str, Any]]]:
@@ -38,10 +40,12 @@ def _cases(kind: str, only: str | None) -> list[tuple[str, str, dict[str, Any]]]
 
 
 def _cost(meta: dict[str, Any]) -> float:
+    if str(meta["model"]).startswith("ollama/"):
+        return 0.0
     return float(meta["input_tokens"] * PRICE_INPUT + meta["output_tokens"] * PRICE_OUTPUT) / 1_000_000
 
 
-def run(llm: AnthropicLLM, settings: Settings, only: str | None) -> dict[str, Any]:
+def run(llm: LLMClient, settings: Settings, only: str | None) -> dict[str, Any]:
     totals: dict[str, SetScore] = {}
     report: dict[str, Any] = {"cases": [], "errors": []}
     unverified = items = 0
@@ -113,13 +117,11 @@ def main() -> int:
     args = parser.parse_args()
 
     settings = Settings()
-    llm = AnthropicLLM(
-        model=settings.llm_model, effort=args.effort or settings.llm_effort, max_tokens=settings.llm_max_tokens
-    )
+    llm = make_llm(settings, effort=args.effort)
     report = run(llm, settings, args.only)
     report["config"] = {
-        "model": settings.llm_model,
-        "effort": args.effort or settings.llm_effort,
+        "model": model_label(settings),
+        "effort": args.effort or settings.llm_effort if settings.llm_provider == "anthropic" else None,
         "prompt_versions": [CANDIDATE_TARGET.prompt_version, JOB_TARGET.prompt_version],
         "run_at": datetime.now(UTC).isoformat(timespec="seconds"),
     }

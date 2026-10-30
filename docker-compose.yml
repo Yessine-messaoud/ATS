@@ -23,8 +23,13 @@ services:
     environment:
       APP_ENV: development
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-ats_user}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-ats_db}
-      # Needed for CV/job extraction; without it, extraction endpoints return 503.
+      # LLM: Ollama running on the host (GPU inference stays outside Docker), or Claude with LLM_PROVIDER=anthropic.
+      LLM_PROVIDER: ${LLM_PROVIDER:-ollama}
+      OLLAMA_URL: ${OLLAMA_URL:-http://host.docker.internal:11434}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-mistral}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
     ports:
       - '8000:8000'
     healthcheck:

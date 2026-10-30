@@ -13,15 +13,14 @@ from sqlalchemy.orm import Session
 from app.config import Settings, get_settings
 from app.db import get_session
 from app.extraction import ExtractionFailed, LLMClient, LLMError, LLMRefused
-from app.extraction.anthropic_client import AnthropicLLM
 from app.ingestion import RejectedFile, UnreadableDocument
+from app.providers import make_llm
 from app.services.profiles import DuplicateDocument
 
 
 @lru_cache
 def get_llm() -> LLMClient:
-    settings = get_settings()
-    return AnthropicLLM(model=settings.llm_model, effort=settings.llm_effort, max_tokens=settings.llm_max_tokens)
+    return make_llm(get_settings())
 
 
 DbSession = Annotated[Session, Depends(get_session)]

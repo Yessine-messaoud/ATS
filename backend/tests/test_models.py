@@ -141,6 +141,14 @@ def test_invalid_data_is_rejected(model: Any, payload: dict[str, Any]) -> None:
         model.model_validate(payload)
 
 
+def test_scheme_less_urls_become_https() -> None:
+    identity = CandidateIdentity.model_validate(
+        {"linkedin_url": "linkedin.com/in/samira", "github_url": "github.com/s"}
+    )
+    assert identity.linkedin_url == "https://linkedin.com/in/samira"
+    assert identity.github_url == "https://github.com/s"
+
+
 def test_examples_validate() -> None:
     from examples.profiles import candidate, job, send_to_matching_service
 

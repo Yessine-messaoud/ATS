@@ -1,7 +1,8 @@
 """Agent eval: tool selection, confirmation gating, completion, cost and latency on 30 recruiter requests.
 
 Usage (from backend/):  uv run python -m eval.run_agent [--only fairness] [--effort medium]
-Needs Postgres and an LLM key; costs real API money (one conversation per case, several model calls each).
+Needs Postgres and an LLM: local Ollama by default (free), or Claude with LLM_PROVIDER=anthropic, which costs real
+API money (one conversation per case, several model calls each).
 Runs on the demo seed inside a transaction that is rolled back. Proposed actions are never confirmed.
 """
 
@@ -16,18 +17,19 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
-from app.agent.model import AgentModel, AnthropicAgentModel
+from app.agent.model import AgentModel
 from app.agent.prompts import AGENT_PROMPT_VERSION
 from app.agent.runtime import send_message
 from app.agent.tools import ToolContext
 from app.config import Settings
 from app.db import AgentConversationRecord, get_engine
 from app.extraction import LLMError
+from app.providers import make_agent_model, model_label
 from scripts.seed_demo import seed
 
 CASES = Path(__file__).parent / "data" / "agent" / "cases.json"
 RESULTS = Path(__file__).parent / "results"
-PRICE_INPUT, PRICE_OUTPUT = 4.00, 20.00  # USD per million tokens, claude-opus-5-5
+PRICE_INPUT, PRICE_OUTPUT = 4.00, 20.00  # USD per million tokens, claude-opus-5-5; local models cost nothing
 
 
 def load_cases(only: str | None = None) -> list[dict[str, Any]]:
@@ -76,7 +78,9 @@ def grade(case: dict[str, Any], conversation: AgentConversationRecord, error: st
         "error": error,
         "model_calls": usage.get("calls", 0),
         "latency_ms": usage.get("latency_ms", 0),
-        "cost_usd": round(
+        "cost_usd": 0.0
+        if str(usage.get("model", "")).startswith("ollama/")
+        else round(
             (usage.get("input_tokens", 0) * PRICE_INPUT + usage.get("output_tokens", 0) * PRICE_OUTPUT) / 1e6, 4
         ),
     }
@@ -125,8 +129,8 @@ def main() -> int:
     parser.add_argument("--effort", choices=["low", "medium", "high", "xhigh", "max"])
     args = parser.parse_args()
     settings = Settings()
-    effort = args.effort or settings.llm_effort
-    model = AnthropicAgentModel(model=settings.llm_model, effort=effort, max_tokens=settings.llm_max_tokens)
+    effort = args.effort or settings.llm_effort if settings.llm_provider == "anthropic" else None
+    model = make_agent_model(settings, effort=args.effort)
 
     with get_engine().connect() as connection:
         transaction = connection.begin()
@@ -137,7 +141,7 @@ def main() -> int:
             db.close()
             transaction.rollback()
     report["config"] = {
-        "model": settings.llm_model,
+        "model": model_label(settings),
         "effort": effort,
         "prompt_version": AGENT_PROMPT_VERSION,
         "run_at": datetime.now(UTC).isoformat(timespec="seconds"),

@@ -8,11 +8,12 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
-from app.agent.model import AgentModel, AnthropicAgentModel
+from app.agent.model import AgentModel
 from app.agent.runtime import NoPendingAction, decide, send_message, transcript
 from app.agent.tools import ToolContext
 from app.config import get_settings
 from app.db import AgentConversationRecord
+from app.providers import make_agent_model
 
 from .deps import AppSettings, DbSession, domain_errors, get_or_404
 
@@ -21,8 +22,7 @@ router = APIRouter(prefix="/agent", tags=["assistant"])
 
 @lru_cache
 def get_agent_model() -> AgentModel:
-    settings = get_settings()
-    return AnthropicAgentModel(model=settings.llm_model, effort=settings.llm_effort, max_tokens=settings.llm_max_tokens)
+    return make_agent_model(get_settings())
 
 
 Model = Annotated[AgentModel, Depends(get_agent_model)]

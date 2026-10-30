@@ -1,15 +1,15 @@
 # Evaluation harness
 
-Offline evaluation of the AI components. It runs against the real LLM, so **each run costs API money**. At the default
-settings (`claude-opus-5-5`, effort `medium`) a full run is 9 documents, usually one LLM call each, and costs
-roughly a dollar. The exact cost is printed and saved with every run.
+Offline evaluation of the AI components, run against the configured LLM (`LLM_PROVIDER`). With the default local
+model (Ollama, `mistral`) a run is free but slow, about 1–2 minutes per document on a 6 GB GPU. With
+`LLM_PROVIDER=anthropic` (`claude-opus-5-5`, effort `medium`) a full extraction run costs roughly a dollar. The cost and
+the model are saved with every run.
 
 ## Extraction (Phase 1)
 
 ```bash
 cd backend
-export ANTHROPIC_API_KEY=...            # or `ant auth login`
-uv run python -m eval.run_extraction    # all cases
+uv run python -m eval.run_extraction    # all cases, local model (ollama serve must be running)
 uv run python -m eval.run_extraction --only en-03 --effort low
 ```
 
@@ -91,7 +91,6 @@ and gives a baseline for comparing a neural embedding model.
 
 ```bash
 cd backend
-export ANTHROPIC_API_KEY=...
 uv run python -m eval.run_agent                 # 30 cases
 uv run python -m eval.run_agent --only fairness
 ```

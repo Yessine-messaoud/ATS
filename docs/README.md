@@ -41,11 +41,20 @@ To run the whole stack in Docker instead: `docker compose up -d --build`, then o
 Load demo data without an LLM key: `docker compose exec backend python -m scripts.seed_demo`. The image includes Tesseract, so OCR
 for scanned CVs works there. Locally, OCR is skipped (and flagged) unless Tesseract is installed.
 
-### Claude API key (CV and job extraction)
+### LLM: local (Ollama) or Claude
 
-Extraction calls `claude-opus-5-5`. Set `ANTHROPIC_API_KEY` in `.env` (for Docker) or `backend/.env` (for a local
-backend), or run `ant auth login`. Without credentials, the API still runs: extraction endpoints return `503`, and
-the tests use a scripted fake LLM.
+Extraction, match explanations and the assistant use the provider set by `LLM_PROVIDER`.
+
+- **`ollama` (default).** A local model served by [Ollama](https://ollama.com): free, and CVs never leave the
+  machine. Install Ollama, then `ollama pull mistral`. The assistant needs a model with tool calling (`ollama show
+  <model>` lists `tools` under Capabilities): mistral, llama3.1 or qwen2.5 work, llama3 (8B, first release) does
+  not. `OLLAMA_NUM_GPU=99` (the default) keeps every layer on the GPU. Ollama's own estimate leaves about 25% of a 7B
+  model on the CPU of a 6 GB card, which is about 1.7× slower. Check with `ollama ps`: the PROCESSOR column should
+  read `100% GPU`. In Docker, the backend reaches the host's Ollama at `host.docker.internal:11434`.
+- **`anthropic`.** `claude-opus-5-5`. Set `ANTHROPIC_API_KEY` in `.env` (for Docker) or `backend/.env`, or run
+  `ant auth login`. It is more accurate and much faster than a 7B local model.
+
+If the LLM is unreachable, the API still runs: AI endpoints return `503`, and the tests use a scripted fake LLM.
 
 ## API (Phase 1)
 
