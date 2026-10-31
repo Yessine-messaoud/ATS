@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Info, TriangleAlert } from "lucide-react";
 
-import { Badge, Card, Notice, STATUS_TONE, ScoreBar } from "@/components/ui";
+import { Avatar } from "@/components/avatar";
+import { Badge, Card, Notice, PageHeader, STATUS_TONE, ScoreBar, ScoreRing } from "@/components/ui";
 import { api } from "@/lib/api";
 
 export const metadata: Metadata = { title: "Match details" };
@@ -25,26 +27,41 @@ export default async function MatchPage(props: PageProps<"/matches/[id]">) {
 
   return (
     <div className="space-y-4">
-      <div>
-        <Link href={`/jobs/${job.id}`} className="text-xs text-zinc-500 hover:underline">
-          ← {job.profile.title} ranking
-        </Link>
-        <h1 className="text-xl font-semibold">
-          <Link href={`/candidates/${candidate.id}`} className="hover:underline">
-            {candidate.profile.identity?.full_name ?? "Candidate"}
-          </Link>{" "}
-          for {job.profile.title}
-        </h1>
-        <div className="mt-2 flex flex-wrap items-center gap-3 text-sm">
-          <span className="text-3xl font-semibold tabular-nums">{result.overall_score.toFixed(1)}</span>
-          <span className="text-zinc-500">/ 100</span>
-          {result.penalty_multiplier < 1 && (
-            <span className="text-zinc-500">
-              ({result.raw_score.toFixed(1)} before the penalty for {result.missing_required.length} missing required skill(s))
+      <PageHeader
+        crumbs={[
+          { label: "Jobs", href: "/jobs" },
+          { label: job.profile.title, href: `/jobs/${job.id}` },
+          { label: "Match details" },
+        ]}
+        title={
+          <span className="flex items-center gap-3">
+            <Avatar id={candidate.id} name={candidate.profile.identity?.full_name} size="lg" />
+            <span>
+              <Link href={`/candidates/${candidate.id}`} className="hover:underline">
+                {candidate.profile.identity?.full_name ?? "Candidate"}
+              </Link>
+              <span className="block text-sm font-normal text-zinc-500">for {job.profile.title}</span>
             </span>
-          )}
-          {result.passed_knockouts ? <Badge tone="green">mandatory criteria met</Badge> : <Badge tone="red">a mandatory criterion is not met</Badge>}
-          {!result.requirements_validated && <Badge tone="amber">requirements not validated</Badge>}
+          </span>
+        }
+      />
+
+      <div className="flex flex-wrap items-center gap-4 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+        <ScoreRing score={result.overall_score} size={72} />
+        <div className="min-w-0 flex-1 space-y-1.5">
+          <div className="flex flex-wrap items-center gap-2">
+            {result.passed_knockouts ? (
+              <Badge tone="green">mandatory criteria met</Badge>
+            ) : (
+              <Badge tone="red">a mandatory criterion is not met</Badge>
+            )}
+            {!result.requirements_validated && <Badge tone="amber">requirements not validated</Badge>}
+          </div>
+          <p className="text-sm text-zinc-500">
+            {result.overall_score.toFixed(1)} / 100
+            {result.penalty_multiplier < 1 &&
+              ` · ${result.raw_score.toFixed(1)} before the penalty for ${result.missing_required.length} missing required skill(s)`}
+          </p>
         </div>
       </div>
 
@@ -117,12 +134,13 @@ export default async function MatchPage(props: PageProps<"/matches/[id]">) {
         </div>
       </Card>
       {!!result.ignored_unverified?.length && (
-        <Notice>
+        <Notice icon={<TriangleAlert />}>
           Claimed but not found in the CV, so not counted: {result.ignored_unverified.join(", ")}. Confirm them on the
           candidate page if they are correct.
         </Notice>
       )}
-      <p className="text-xs text-zinc-500">
+      <p className="flex items-start gap-1.5 text-xs text-zinc-500">
+        <Info className="mt-0.5 size-3.5 shrink-0" aria-hidden />
         Engine {result.engine_version}, computed {new Date(match.created_at).toLocaleString("en-GB")}. Deterministic: no
         AI is involved in the score.
       </p>

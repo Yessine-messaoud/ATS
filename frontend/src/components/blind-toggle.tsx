@@ -1,21 +1,26 @@
 import Link from "next/link";
+import { Eye, EyeOff } from "lucide-react";
 
-import { cx } from "./ui";
+import { cx, focusRing } from "./ui";
 
-/** Server-rendered toggle for blind screening (`?blind=1` hides candidate names). */
+/** Server-rendered switch for blind screening (`?blind=1` hides candidate names). */
 export function BlindToggle({ href, blind }: { href: string; blind: boolean }) {
   return (
     <Link
       href={blind ? href : `${href}?blind=1`}
+      role="switch"
+      aria-checked={blind}
       className={cx(
-        "inline-flex items-center gap-2 rounded-md border px-2.5 py-1 text-xs",
+        "inline-flex items-center gap-2 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors",
         blind
-          ? "border-zinc-900 bg-zinc-900 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900"
-          : "border-zinc-300 text-zinc-600 dark:border-zinc-700 dark:text-zinc-400",
+          ? "border-indigo-600 bg-indigo-600 text-white dark:border-indigo-400 dark:bg-indigo-500"
+          : "border-zinc-300 text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800",
+        focusRing,
       )}
       title="Hide names during screening to reduce bias"
     >
-      Blind screening: {blind ? "on" : "off"}
+      {blind ? <EyeOff className="size-3.5" aria-hidden /> : <Eye className="size-3.5" aria-hidden />}
+      Blind screening {blind ? "on" : "off"}
     </Link>
   );
 }

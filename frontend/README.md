@@ -19,16 +19,32 @@ pipeline board.
 
 - The original uploaded CV is streamed through `/candidates/[id]/file`, served with a `sandbox` CSP.
 
+## Interface
+
+- **Navigation.** Sidebar on desktop, top bar with a menu drawer on mobile, active page highlighted, breadcrumbs on
+  every detail page.
+- **Search: Ctrl+K / ⌘K** from anywhere. Jumps to a page, a job or a candidate. Search covers names, titles and
+  skills.
+- **Dashboard** (`/`): key numbers, a "needs your attention" queue (requirements to validate, flagged documents,
+  unverified items, new applications), pipeline progress per job, recent activity.
+- **Feedback.** Toasts confirm actions, skeletons show while pages load, and slow AI steps (job extraction, CV upload,
+  match explanation, assistant) show what is happening and the elapsed time.
+- **Accessibility.** Visible keyboard focus everywhere, a skip link, labelled controls, `aria-current` on navigation,
+  and the palette and lists are fully keyboard-driven. Light and dark themes follow the system setting.
+- Icons: `lucide-react`. Assistant replies render Markdown (tables, lists) with `react-markdown` and `remark-gfm`;
+  raw HTML is never rendered.
+
 ## Pages
 
 | Route | Purpose |
 |---|---|
-| `/jobs` | Job list. Paste a job description to create a job. |
+| `/` | Dashboard: numbers, to-do queue, pipelines, recent activity. |
+| `/jobs` | Job cards with search and status filters; "New job" opens the paste-a-description form (`?new=1`). |
 | `/jobs/[id]` | Ranking. Candidates meeting the mandatory criteria first, the others listed separately; blind screening toggle; add to pipeline; score details. |
 | `/jobs/[id]/requirements` | Review and validate the extracted requirements (required/preferred, levels, evidence). |
 | `/jobs/[id]/pipeline` | Kanban board (drag-and-drop or menu). Each move is logged as a recruiter decision. |
 | `/jobs/[id]/weights` | Per-job scoring weights, missing-skill penalty, knock-outs on/off. |
-| `/candidates` | Candidate list with review flags; multi-file CV upload. |
+| `/candidates` | Candidate list with search, review filters (needs review, security flag, talent pool) and sorting; multi-file CV upload (`?upload=1`). |
 | `/candidates/[id]` | Profile review: each item next to its evidence; confirm or remove unverified items; source document and security flags; best matching jobs. |
 | `/assistant`, `/assistant/[id]` | Chat with the recruitment assistant; approve or decline the actions it proposes; optional blind mode. |
 | `/matches/[id]` | Score breakdown, mandatory criteria, explanation (fact-checked), interview questions. |

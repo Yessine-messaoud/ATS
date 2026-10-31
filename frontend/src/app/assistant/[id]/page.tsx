@@ -4,6 +4,8 @@ import { Chat } from "./chat";
 
 export default async function ConversationPage(props: PageProps<"/assistant/[id]">) {
   const { id } = await props.params;
+  const { q } = await props.searchParams;
   const conversation = await api.conversation(id);
-  return <Chat initial={conversation} />;
+  const firstPrompt = typeof q === "string" && conversation.transcript.length === 0 ? q : undefined;
+  return <Chat initial={conversation} firstPrompt={firstPrompt} />;
 }

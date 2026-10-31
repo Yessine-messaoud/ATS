@@ -1,40 +1,44 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useTransition } from "react";
+import { Check, FileSearch, Plus } from "lucide-react";
 
 import { addToPipeline, scoreMatch } from "@/app/actions";
-import { Button } from "@/components/ui";
+import { useActionToast } from "@/components/toaster";
+import { Badge, Button } from "@/components/ui";
 
-export function RankingRowActions({
-  jobId,
-  candidateId,
-  inPipeline,
-}: {
-  jobId: string;
-  candidateId: string;
-  inPipeline: boolean;
-}) {
-  const [pending, startTransition] = useTransition();
-  const [error, setError] = useState<string>();
+export function RankingRowActions({ jobId, candidateId, inPipeline }: { jobId: string; candidateId: string; inPipeline: boolean }) {
+  const [scoring, startScoring] = useTransition();
+  const [adding, startAdding] = useTransition();
+  const toast = useActionToast();
 
   return (
-    <div className="flex justify-end gap-1">
-      <Button variant="ghost" disabled={pending} onClick={() => startTransition(() => scoreMatch(candidateId, jobId))}>
-        Details
-      </Button>
+    <div className="flex items-center justify-start gap-1.5 lg:justify-end">
       <Button
-        variant="secondary"
-        disabled={pending || inPipeline}
-        title={error}
-        onClick={() =>
-          startTransition(async () => {
-            const result = await addToPipeline(jobId, candidateId);
-            setError(result?.error);
-          })
-        }
+        variant="ghost"
+        size="sm"
+        loading={scoring}
+        icon={<FileSearch className="size-3.5" />}
+        title="Score breakdown and an AI-written explanation (takes a few seconds)"
+        onClick={() => startScoring(() => scoreMatch(candidateId, jobId))}
       >
-        {inPipeline ? "In pipeline" : "Add to pipeline"}
+        {scoring ? "Explaining…" : "Details"}
       </Button>
+      {inPipeline ? (
+        <Badge tone="indigo">
+          <Check className="size-3" aria-hidden /> In pipeline
+        </Badge>
+      ) : (
+        <Button
+          variant="secondary"
+          size="sm"
+          loading={adding}
+          icon={<Plus className="size-3.5" />}
+          onClick={() => startAdding(async () => toast(await addToPipeline(jobId, candidateId)))}
+        >
+          Pipeline
+        </Button>
+      )}
     </div>
   );
 }

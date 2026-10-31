@@ -2,7 +2,10 @@
 
 import { useState, useTransition, type ReactNode } from "react";
 
-import { saveCandidateProfile, type ActionState } from "@/app/actions";
+import { Save, Undo2 } from "lucide-react";
+
+import { saveCandidateProfile } from "@/app/actions";
+import { useActionToast } from "@/components/toaster";
 import { EvidenceBadge, Quote } from "@/components/evidence";
 import { Button, Card, Notice, inputClass } from "@/components/ui";
 import type { components } from "@/lib/api-types";
@@ -53,8 +56,8 @@ function Item({
 
 export function ProfileReview({ candidateId, initial }: { candidateId: string; initial: Profile }) {
   const [profile, setProfile] = useState<Profile>(initial);
-  const [state, setState] = useState<ActionState>(null);
   const [pending, startTransition] = useTransition();
+  const toast = useActionToast();
   const dirty = JSON.stringify(profile) !== JSON.stringify(initial);
 
   const update = (patch: Partial<Profile>) => setProfile((p) => ({ ...p, ...patch }));
@@ -202,20 +205,24 @@ export function ProfileReview({ candidateId, initial }: { candidateId: string; i
         </Card>
       </div>
 
-      <div className="sticky bottom-0 flex items-center gap-3 border-t border-zinc-200 bg-zinc-50/95 py-3 dark:border-zinc-800 dark:bg-zinc-950/95">
-        <Button
-          disabled={pending || !dirty}
-          onClick={() => startTransition(async () => setState(await saveCandidateProfile(candidateId, profile)))}
-        >
-          {pending ? "Saving…" : "Save review"}
-        </Button>
-        <Button variant="ghost" disabled={pending || !dirty} onClick={() => setProfile(initial)}>
-          Discard changes
-        </Button>
-        {state?.error && <Notice tone="red">{state.error}</Notice>}
-        {state?.ok && <Notice tone="green">{state.ok}</Notice>}
-        <span className="ml-auto text-xs text-zinc-500">Corrections are kept as feedback to evaluate the extractor.</span>
-      </div>
+      {dirty && (
+        <div className="sticky bottom-4 z-20 flex flex-wrap items-center gap-3 rounded-xl border border-indigo-200 bg-white px-4 py-3 shadow-lg dark:border-indigo-900 dark:bg-zinc-900">
+          <span className="text-sm font-medium">You have unsaved changes</span>
+          <span className="hidden text-xs text-zinc-500 sm:inline">Corrections are kept as feedback to evaluate the extractor.</span>
+          <div className="ml-auto flex gap-2">
+            <Button variant="ghost" disabled={pending} onClick={() => setProfile(initial)} icon={<Undo2 className="size-4" />}>
+              Discard
+            </Button>
+            <Button
+              loading={pending}
+              icon={<Save className="size-4" />}
+              onClick={() => startTransition(async () => toast(await saveCandidateProfile(candidateId, profile)))}
+            >
+              Save review
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

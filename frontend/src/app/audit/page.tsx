@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { Badge, Card, Empty, inputClass, type Tone } from "@/components/ui";
+import { ShieldCheck } from "lucide-react";
+
+import { Badge, Button, Card, Empty, PageHeader, inputClass, type Tone } from "@/components/ui";
 import { api } from "@/lib/api";
+import { actionLabel, timeAgo } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Audit log" };
 
@@ -47,17 +50,14 @@ export default async function AuditPage(props: PageProps<"/audit">) {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-xl font-semibold">Audit log</h1>
-        <p className="text-sm text-zinc-500">
-          Every recruiter decision, automated score, profile correction and privacy operation, newest first. Entries hold
-          ids, not personal data.
-        </p>
-      </div>
+      <PageHeader
+        title="Audit log"
+        description="Every recruiter decision, automated score, profile correction and privacy operation, newest first. Entries hold ids, not personal data."
+      />
       <form className="flex flex-wrap items-end gap-2 text-sm" action="/audit">
         <label className="text-xs text-zinc-500">
           Record id
-          <input name="entity_id" defaultValue={filters.entity_id} placeholder="candidate, job or application id" className={`${inputClass} w-80`} />
+          <input name="entity_id" defaultValue={filters.entity_id} placeholder="candidate, job or application id" className={`${inputClass} sm:w-80`} />
         </label>
         <label className="text-xs text-zinc-500">
           Actions
@@ -71,18 +71,16 @@ export default async function AuditPage(props: PageProps<"/audit">) {
         </label>
         <label className="text-xs text-zinc-500">
           Actor
-          <input name="actor" defaultValue={filters.actor} placeholder="recruiter, system…" className={`${inputClass} w-44`} />
+          <input name="actor" defaultValue={filters.actor} placeholder="recruiter, system…" className={`${inputClass} sm:w-44`} />
         </label>
-        <button type="submit" className="rounded-md bg-zinc-900 px-3 py-1.5 text-white dark:bg-zinc-100 dark:text-zinc-900">
-          Filter
-        </button>
+        <Button type="submit">Filter</Button>
         <Link href="/audit" className="text-xs underline">
           Reset
         </Link>
       </form>
       <Card>
         {entries.length === 0 ? (
-          <Empty>No entries match.</Empty>
+          <Empty icon={<ShieldCheck />} title="No entries match">Change the filters or reset them.</Empty>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -98,10 +96,14 @@ export default async function AuditPage(props: PageProps<"/audit">) {
               <tbody className="divide-y divide-zinc-100 align-top dark:divide-zinc-800">
                 {entries.map((entry) => (
                   <tr key={entry.id}>
-                    <td className="whitespace-nowrap py-2 pr-3 tabular-nums">{new Date(entry.created_at).toLocaleString("en-GB")}</td>
+                    <td className="whitespace-nowrap py-2 pr-3" title={new Date(entry.created_at).toLocaleString("en-GB")}>
+                      {timeAgo(entry.created_at)}
+                    </td>
                     <td className="py-2 pr-3">{entry.actor}</td>
                     <td className="py-2 pr-3">
-                      <Badge tone={tone(entry.action)}>{entry.action}</Badge>
+                      <Badge tone={tone(entry.action)} title={entry.action}>
+                        {actionLabel(entry.action)}
+                      </Badge>
                     </td>
                     <td className="py-2 pr-3 font-mono text-xs">
                       {entry.entity_id ? (

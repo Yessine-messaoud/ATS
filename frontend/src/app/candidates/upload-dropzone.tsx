@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import { useRef, useState } from "react";
+import { CheckCircle2, FileText, Loader2, UploadCloud, XCircle } from "lucide-react";
 
 import { uploadCandidate, type UploadResult } from "@/app/actions";
-import { Badge, cx } from "@/components/ui";
+import { LongTask } from "@/components/long-task";
+import { Badge, cx, focusRing } from "@/components/ui";
 import { FLAG_LABELS } from "@/lib/enums";
 
 type Item = { key: string; name: string; status: "queued" | "uploading" | "done" | "error"; result?: UploadResult };
@@ -37,6 +39,9 @@ export function UploadDropzone() {
     }
   }
 
+  const current = items.find((item) => item.status === "uploading");
+  const waiting = items.filter((item) => item.status === "queued").length;
+
   return (
     <div className="space-y-3">
       <button
@@ -53,12 +58,16 @@ export function UploadDropzone() {
           void upload(e.dataTransfer.files);
         }}
         className={cx(
-          "flex w-full flex-col items-center gap-1 rounded-lg border-2 border-dashed px-4 py-8 text-sm",
-          dragging ? "border-zinc-500 bg-zinc-100 dark:bg-zinc-800" : "border-zinc-300 dark:border-zinc-700",
+          "flex w-full flex-col items-center gap-2 rounded-xl border-2 border-dashed px-4 py-8 text-sm transition-colors",
+          dragging
+            ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-950/40"
+            : "border-zinc-300 hover:border-indigo-400 hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-800/50",
+          focusRing,
         )}
       >
-        <span className="font-medium">Drop CVs here or click to choose</span>
-        <span className="text-xs text-zinc-500">PDF, DOCX, text or .eml application emails, up to 10 MB each</span>
+        <UploadCloud className={cx("size-8", dragging ? "text-indigo-600" : "text-zinc-400")} aria-hidden />
+        <span className="font-medium">Drop CVs here, or click to choose files</span>
+        <span className="text-xs text-zinc-500">PDF, DOCX, text or .eml application emails · up to 10 MB each · several at once</span>
       </button>
       <input
         ref={input}
@@ -71,31 +80,50 @@ export function UploadDropzone() {
           e.target.value = "";
         }}
       />
-      <ul className="space-y-2 text-sm">
-        {items.map((item) => (
-          <li key={item.key} className="rounded-md border border-zinc-200 px-3 py-2 dark:border-zinc-800">
-            <div className="flex items-center justify-between gap-2">
-              <span className="truncate">{item.name}</span>
-              <Badge tone={item.status === "done" ? "green" : item.status === "error" ? "red" : "neutral"}>
-                {item.status === "uploading" ? "extracting…" : item.status}
-              </Badge>
-            </div>
-            {item.result?.ok === false && <p className="mt-1 text-xs text-red-600">{item.result.error}</p>}
-            {item.result?.ok && (
-              <div className="mt-1 flex flex-wrap items-center gap-1 text-xs">
-                <Link href={`/candidates/${item.result.id}`} className="font-medium underline">
-                  Review {item.result.name}
-                </Link>
-                {item.result.flags.map((flag) => (
-                  <Badge key={flag} tone="amber">
-                    {FLAG_LABELS[flag] ?? flag}
-                  </Badge>
-                ))}
+      {current && (
+        <LongTask
+          label={`Reading ${current.name}${waiting ? ` (${waiting} more queued)` : ""}`}
+          expected="about a minute per CV with the local model"
+        />
+      )}
+      {items.length > 0 && (
+        <ul className="divide-y divide-zinc-100 rounded-lg border border-zinc-200 text-sm dark:divide-zinc-800 dark:border-zinc-800">
+          {items.map((item) => (
+            <li key={item.key} className="flex items-start gap-2.5 px-3 py-2">
+              {item.status === "done" ? (
+                <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-600" aria-hidden />
+              ) : item.status === "error" ? (
+                <XCircle className="mt-0.5 size-4 shrink-0 text-red-600" aria-hidden />
+              ) : item.status === "uploading" ? (
+                <Loader2 className="mt-0.5 size-4 shrink-0 animate-spin text-indigo-600" aria-hidden />
+              ) : (
+                <FileText className="mt-0.5 size-4 shrink-0 text-zinc-400" aria-hidden />
+              )}
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="truncate">{item.name}</span>
+                  <span className="shrink-0 text-xs text-zinc-500">
+                    {item.status === "uploading" ? "extracting…" : item.status === "queued" ? "waiting" : item.status === "done" ? "done" : "failed"}
+                  </span>
+                </div>
+                {item.result?.ok === false && <p className="mt-0.5 text-xs text-red-600">{item.result.error}</p>}
+                {item.result?.ok && (
+                  <div className="mt-1 flex flex-wrap items-center gap-1 text-xs">
+                    <Link href={`/candidates/${item.result.id}`} className="font-medium text-indigo-600 hover:underline dark:text-indigo-400">
+                      Review {item.result.name} →
+                    </Link>
+                    {item.result.flags.map((flag) => (
+                      <Badge key={flag} tone="amber">
+                        {FLAG_LABELS[flag] ?? flag}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
               </div>
-            )}
-          </li>
-        ))}
-      </ul>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

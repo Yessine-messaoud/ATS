@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { Badge, Card, Empty, Notice } from "@/components/ui";
+import { ExternalLink, FileText, ShieldAlert, TriangleAlert } from "lucide-react";
+
+import { Avatar } from "@/components/avatar";
+import { Badge, Card, Empty, Notice, PageHeader } from "@/components/ui";
 import { ApiError, api, type CandidateDocument } from "@/lib/api";
 import { FLAG_LABELS } from "@/lib/enums";
 
@@ -32,6 +35,7 @@ export default async function CandidatePage(props: PageProps<"/candidates/[id]">
     api.recommendations(id),
     api.duplicates(id),
   ]);
+  const name = candidate.profile.identity?.full_name ?? "Unnamed candidate";
   const extraction = candidate.extraction as {
     model?: string;
     prompt_version?: string;
@@ -40,25 +44,27 @@ export default async function CandidatePage(props: PageProps<"/candidates/[id]">
 
   return (
     <div className="space-y-4">
-      <div>
-        <Link href="/candidates" className="text-xs text-zinc-500 hover:underline">
-          ← Candidates
-        </Link>
-        <h1 className="text-xl font-semibold">{candidate.profile.identity?.full_name ?? "Unnamed candidate"}</h1>
-        <p className="text-sm text-zinc-500">
-          {candidate.profile.professional_title ?? "—"} · extracted by {extraction.model ?? "?"} ({extraction.prompt_version ?? "?"})
-        </p>
-      </div>
+      <PageHeader
+        crumbs={[{ label: "Candidates", href: "/candidates" }, { label: name }]}
+        title={
+          <span className="flex items-center gap-3">
+            <Avatar id={candidate.id} name={name} size="lg" />
+            {name}
+          </span>
+        }
+        badges={candidate.talent_pool_consent ? <Badge tone="indigo">talent pool</Badge> : undefined}
+        description={`${candidate.profile.professional_title ?? "No title"} · extracted by ${extraction.model ?? "?"} (${extraction.prompt_version ?? "?"})`}
+      />
 
       <Duplicates candidateId={candidate.id} duplicates={duplicates} />
       {document?.flags.includes("possible_prompt_injection") && (
-        <Notice tone="red">
+        <Notice tone="red" icon={<ShieldAlert />}>
           <strong>Possible prompt injection.</strong> This document contains text addressed to an automated screening
           system. It was ignored for extraction, and scores are computed without the LLM. Review the document manually.
         </Notice>
       )}
       {document?.flags.includes("hidden_text") && (
-        <Notice tone="red">
+        <Notice tone="red" icon={<ShieldAlert />}>
           <strong>Hidden text found</strong> (white, tiny or off-page). It was excluded from extraction:
           <ul className="mt-1 list-disc pl-5 text-xs">
             {document.hidden_text.map((text) => (
@@ -68,7 +74,7 @@ export default async function CandidatePage(props: PageProps<"/candidates/[id]">
         </Notice>
       )}
       {!!extraction.issues?.length && (
-        <Notice>
+        <Notice icon={<TriangleAlert />}>
           Some extracted fields were invalid and dropped: {extraction.issues.map((i) => i.path).join(", ")}.
         </Notice>
       )}
@@ -81,8 +87,13 @@ export default async function CandidatePage(props: PageProps<"/candidates/[id]">
             actions={
               document &&
               !document.purged_at && (
-                <a href={`/candidates/${id}/file`} target="_blank" rel="noreferrer" className="text-xs underline">
-                  Open original
+                <a
+                  href={`/candidates/${id}/file`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-1 text-xs font-medium text-indigo-600 hover:underline dark:text-indigo-400"
+                >
+                  Open original <ExternalLink className="size-3" aria-hidden />
                 </a>
               )
             }
@@ -101,12 +112,12 @@ export default async function CandidatePage(props: PageProps<"/candidates/[id]">
                     </Badge>
                   ))}
                 </div>
-                <pre className="max-h-[32rem] overflow-auto whitespace-pre-wrap rounded bg-zinc-50 p-3 font-mono text-xs leading-relaxed dark:bg-zinc-950">
+                <pre className="max-h-[32rem] overflow-auto whitespace-pre-wrap rounded-lg bg-zinc-50 p-3 font-mono text-xs leading-relaxed dark:bg-zinc-950">
                   {document.raw_text}
                 </pre>
               </>
             ) : (
-              <Empty>No source document stored.</Empty>
+              <Empty icon={<FileText />}>No source document stored.</Empty>
             )}
           </Card>
           <PrivacyPanel

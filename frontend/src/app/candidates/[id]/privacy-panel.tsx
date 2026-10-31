@@ -3,7 +3,10 @@
 import Link from "next/link";
 import { useState, useTransition } from "react";
 
-import { eraseCandidate, setConsent, type ActionState } from "@/app/actions";
+import { Download, ShieldCheck, Trash2 } from "lucide-react";
+
+import { eraseCandidate, setConsent } from "@/app/actions";
+import { useActionToast } from "@/components/toaster";
 import { Button, Card, Notice, inputClass } from "@/components/ui";
 
 const CONFIRM_WORD = "ERASE";
@@ -20,16 +23,23 @@ export function PrivacyPanel({
   consentUpdatedAt: string | null;
   purgeAfter: string | null;
 }) {
-  const [state, setState] = useState<ActionState>(null);
+  const toast = useActionToast();
   const [erasing, setErasing] = useState(false);
   const [typed, setTyped] = useState("");
   const [reason, setReason] = useState("candidate request");
   const [pending, startTransition] = useTransition();
 
-  const recordConsent = (value: boolean) => startTransition(async () => setState(await setConsent(candidateId, value)));
+  const recordConsent = (value: boolean) => startTransition(async () => toast(await setConsent(candidateId, value)));
 
   return (
-    <Card title="Privacy" actions={<Link href={`/audit?entity_id=${candidateId}`} className="text-xs underline">Audit trail</Link>}>
+    <Card
+      title="Privacy"
+      actions={
+        <Link href={`/audit?entity_id=${candidateId}`} className="flex items-center gap-1 text-xs font-medium text-indigo-600 hover:underline dark:text-indigo-400">
+          <ShieldCheck className="size-3.5" aria-hidden /> Audit trail
+        </Link>
+      }
+    >
       <div className="space-y-3 text-sm">
         <div>
           <p className="text-xs text-zinc-500">Talent-pool consent (to be matched to jobs the candidate did not apply to)</p>
@@ -63,12 +73,19 @@ export function PrivacyPanel({
           </p>
         )}
         <div className="flex flex-wrap gap-2">
-          <a href={`/candidates/${candidateId}/export`} className="text-xs underline">
-            Export all data (JSON)
+          <a
+            href={`/candidates/${candidateId}/export`}
+            className="flex items-center gap-1 text-xs font-medium text-indigo-600 hover:underline dark:text-indigo-400"
+          >
+            <Download className="size-3.5" aria-hidden /> Export all data (JSON)
           </a>
           {!erasing && (
-            <button type="button" className="text-xs text-red-700 underline dark:text-red-400" onClick={() => setErasing(true)}>
-              Erase candidate…
+            <button
+              type="button"
+              className="flex items-center gap-1 text-xs font-medium text-red-700 hover:underline dark:text-red-400"
+              onClick={() => setErasing(true)}
+            >
+              <Trash2 className="size-3.5" aria-hidden /> Erase candidate…
             </button>
           )}
         </div>
@@ -92,7 +109,7 @@ export function PrivacyPanel({
                 variant="danger"
                 className="px-2 py-0.5 text-xs"
                 disabled={pending || typed !== CONFIRM_WORD}
-                onClick={() => startTransition(async () => setState(await eraseCandidate(candidateId, reason)))}
+                onClick={() => startTransition(async () => toast(await eraseCandidate(candidateId, reason)))}
               >
                 Erase permanently
               </Button>
@@ -102,8 +119,6 @@ export function PrivacyPanel({
             </div>
           </Notice>
         )}
-        {state?.error && <Notice tone="red">{state.error}</Notice>}
-        {state?.ok && <p className="text-xs text-emerald-700 dark:text-emerald-400">{state.ok}</p>}
       </div>
     </Card>
   );

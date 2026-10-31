@@ -132,7 +132,9 @@ export async function startConversation(formData: FormData): Promise<void> {
   const conversation = await sendJson<Conversation>("/api/agent/conversations", "POST", {
     blind: formData.get("blind") === "on",
   });
-  redirect(`/assistant/${conversation.id}`);
+  const prompt = String(formData.get("prompt") ?? "").trim();
+  // The first message is sent by the chat page, so the recruiter sees the conversation while the model works.
+  redirect(`/assistant/${conversation.id}${prompt ? `?q=${encodeURIComponent(prompt)}` : ""}`);
 }
 
 export type ConversationResult = { conversation?: Conversation; error?: string };
@@ -181,4 +183,52 @@ export async function eraseCandidate(candidateId: string, reason: string): Promi
   }
   revalidatePath("/candidates", "layout");
   redirect("/candidates?erased=1");
+}
+
+export type SearchHit = { kind: "job" | "candidate"; id: string; title: string; subtitle: string; href: string };
+
+function normalize(text: string): string {
+  return text.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+}
+
+/** Command palette search over jobs and candidates (names, titles, skills). */
+export async function searchEverything(query: string): Promise<SearchHit[]> {
+  const words = normalize(query).split(/\s+/).filter(Boolean);
+  if (words.length === 0) return [];
+  const [jobs, candidates] = await Promise.all([
+    request<Job[]>("/api/jobs"),
+    request<Candidate[]>("/api/candidates?limit=200"),
+  ]);
+  const matches = (haystack: string) => words.every((word) => normalize(haystack).includes(word));
+  const jobHits: SearchHit[] = jobs
+    .filter((job) =>
+      matches([job.profile.title, job.profile.company, ...(job.profile.skill_requirements ?? []).map((s) => s.name)].join(" ")),
+    )
+    .map((job) => ({
+      kind: "job",
+      id: job.id,
+      title: job.profile.title,
+      subtitle: [job.status, job.profile.location?.city, job.requirements_validated ? null : "requirements to validate"]
+        .filter(Boolean)
+        .join(" · "),
+      href: `/jobs/${job.id}`,
+    }));
+  const candidateHits: SearchHit[] = candidates
+    .filter((candidate) =>
+      matches(
+        [
+          candidate.profile.identity?.full_name,
+          candidate.profile.professional_title,
+          ...(candidate.profile.skills ?? []).map((s) => s.name),
+        ].join(" "),
+      ),
+    )
+    .map((candidate) => ({
+      kind: "candidate",
+      id: candidate.id,
+      title: candidate.profile.identity?.full_name ?? "Unnamed candidate",
+      subtitle: candidate.profile.professional_title ?? "",
+      href: `/candidates/${candidate.id}`,
+    }));
+  return [...jobHits.slice(0, 6), ...candidateHits.slice(0, 8)];
 }
