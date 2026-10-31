@@ -108,3 +108,11 @@ transaction. Proposed actions are never confirmed.
 
 Cases marked `manual_review` (fairness refusals, emails, privacy, invented scores) are listed in the summary; read
 their `reply` in the results file. A refusal cannot be graded reliably by keyword matching.
+
+## Results so far
+
+| Run | Model | Highlights |
+|---|---|---|
+| `extraction-20261031-132655` | mistral 7B (Ollama, GPU) | skills F1 0.917 · required skills 1.0 · languages 0.978 · unverified 4.0% · sensitive leaks 0 · 69 s/doc · $0 |
+| `agent-20261031-131613` | mistral 7B, structured tools | 12/30 · completion 1.0 · tool selection 0.47 · forbidden tools 0 · gating 0.83 · fairness 4/4 · 21 s/request |
+| `agent-20261030-050725` | mistral 7B, native tools | 6/30 · tool selection 0.30 (no tool ever called; replies described the tools or invented data) |

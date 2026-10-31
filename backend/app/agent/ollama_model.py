@@ -32,6 +32,8 @@ ToolMode = Literal["structured", "native"]
 ANSWER = "answer"
 # Tool calls in one turn after which the model must answer (the runtime's step limit is the hard stop).
 MAX_TOOL_CALLS_PER_TURN = 6
+# Output caps per call: a routing decision, tool arguments, a reply to the recruiter.
+ROUTER_TOKENS, ARGUMENT_TOKENS, ANSWER_TOKENS = 48, 384, 1024
 
 ROUTER_PROMPT = """\
 My request: "{request}"
@@ -237,7 +239,11 @@ class OllamaAgentModel:
             for t in tools
         ]
         body, latency_ms = ollama_chat(
-            self._options, to_ollama_messages(system, messages), tools=tool_params or None, client=self._client
+            self._options,
+            to_ollama_messages(system, messages),
+            tools=tool_params or None,
+            max_tokens=ANSWER_TOKENS,
+            client=self._client,
         )
         content = from_ollama_message(body.get("message") or {})
         if any(block["type"] == "tool_use" for block in content):
@@ -253,10 +259,14 @@ class OllamaAgentModel:
         bodies: list[dict[str, Any]] = []
         elapsed = 0
 
-        def call(prompt: str, schema: dict[str, Any] | None) -> str:
+        def call(prompt: str, schema: dict[str, Any] | None, max_tokens: int) -> str:
             nonlocal elapsed
             body, ms = ollama_chat(
-                self._options, [*history, {"role": "user", "content": prompt}], format=schema, client=self._client
+                self._options,
+                [*history, {"role": "user", "content": prompt}],
+                format=schema,
+                max_tokens=max_tokens,
+                client=self._client,
             )
             bodies.append(body)
             elapsed += ms
@@ -284,7 +294,7 @@ class OllamaAgentModel:
                 catalogue=catalogue(list(by_name.values())),
             )
             try:
-                decision = json.loads(call(prompt, router))
+                decision = json.loads(call(prompt, router, ROUTER_TOKENS))
                 choice = ANSWER if decision.get(done_flag) else str(decision.get("next", ANSWER))
             except (json.JSONDecodeError, AttributeError):
                 choice = ANSWER
@@ -292,7 +302,7 @@ class OllamaAgentModel:
         if choice in by_name:
             tool = by_name[choice]
             schema = grounded_schema(tool, known_ids)
-            raw = call(ARGUMENTS_PROMPT.format(name=tool.name, description=tool.description), schema)
+            raw = call(ARGUMENTS_PROMPT.format(name=tool.name, description=tool.description), schema, ARGUMENT_TOKENS)
             try:
                 arguments = json.loads(raw)
             except json.JSONDecodeError:
@@ -303,6 +313,6 @@ class OllamaAgentModel:
             if (tool.name, json.dumps(arguments, sort_keys=True)) not in calls_this_turn(messages):
                 return self._turn([_tool_use(tool.name, arguments)], "tool_use", bodies, elapsed)
 
-        answer = call(ANSWER_PROMPT.format(request=last_request(messages)), None).strip()
+        answer = call(ANSWER_PROMPT.format(request=last_request(messages)), None, ANSWER_TOKENS).strip()
         stop_reason = "max_tokens" if bodies[-1].get("done_reason") == "length" else "end_turn"
         return self._turn([{"type": "text", "text": answer}], stop_reason, bodies, elapsed)

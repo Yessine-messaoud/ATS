@@ -38,10 +38,17 @@ def ollama_chat(
     *,
     tools: list[dict[str, Any]] | None = None,
     format: dict[str, Any] | None = None,
+    max_tokens: int | None = None,
     client: httpx.Client | None = None,
 ) -> tuple[dict[str, Any], int]:
-    """One non-streaming /api/chat call. Returns the response body and the latency in milliseconds."""
+    """One non-streaming /api/chat call. Returns the response body and the latency in milliseconds.
+
+    `max_tokens` caps the output: Ollama's default is unlimited, so a model that starts repeating itself would
+    otherwise generate until the context is full (minutes per call on a laptop GPU).
+    """
     model_options: dict[str, Any] = {"num_ctx": options.num_ctx, "temperature": options.temperature}
+    if max_tokens is not None:
+        model_options["num_predict"] = max_tokens
     if options.num_gpu is not None:
         model_options["num_gpu"] = options.num_gpu
     body: dict[str, Any] = {
@@ -72,6 +79,10 @@ def ollama_chat(
     if response.status_code >= 400:
         raise LLMError(f"Ollama error {response.status_code}: {response.text[:300]}")
     return response.json(), latency_ms
+
+
+# A full CV profile is about 1-2k tokens of JSON; a cut-off reply is invalid JSON and goes to the correction round.
+EXTRACTION_MAX_TOKENS = 4096
 
 
 def decoding_schema(schema: dict[str, Any]) -> dict[str, Any]:
@@ -111,7 +122,9 @@ class OllamaSession:
         return self._call()
 
     def _call(self) -> ToolCallResult:
-        body, latency_ms = ollama_chat(self._options, self._messages, format=self._format, client=self._client)
+        body, latency_ms = ollama_chat(
+            self._options, self._messages, format=self._format, max_tokens=EXTRACTION_MAX_TOKENS, client=self._client
+        )
         content = (body.get("message") or {}).get("content") or ""
         self._messages.append({"role": "assistant", "content": content})
         try:

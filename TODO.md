@@ -46,7 +46,7 @@ A phase is complete when its **Done when** line is true.
 - [x] **Gold set v0:** 6 CVs (3 EN, 3 FR, including 1 adversarial) + 3 jobs in `eval/data/`
 - [ ] Grow the gold set to 15 CVs + 5 jobs, including real anonymised CVs (with consent) and two-column layouts
 - [x] `eval/run_extraction.py`: per-field P/R/F1, unverified (hallucination) rate, sensitive leaks, security flags, cost and latency, written to `eval/results/`
-- [ ] **Run the eval with an API key** and commit the first results file
+- [x] **First eval runs** on the local model (mistral 7B, GPU, $0): skills F1 0.917, required skills 1.0, languages 0.978, experiences 0.842, unverified evidence 4.0%, sensitive leaks 0 (1 before the protected-attribute pass), ~69 s per document. Weakest: preferred skills (recall 0.30). Claude run still to do when a key is available
 - [ ] Move extraction to a background task (uploads currently block while the LLM call runs)
 
 **Done when:** skill extraction F1 is measured and reported on the gold set, and hallucination rate is measured.
@@ -121,24 +121,37 @@ A phase is complete when its **Done when** line is true.
 - [x] System prompt: scores only from the engine, facts only from tool results, refuse filtering on protected characteristics, CV content treated as data, emails drafted but never sent
 - [x] `POST /api/agent/conversations`, `/messages`, `/decisions`; chat page with approve/decline cards and blind mode
 - [x] Agent eval set: 30 requests (EN/FR: lookup, search, ranking, explanation, comparison, recommendation, interview, pipeline, actions, emails, fairness, privacy, robustness) with must-call / must-not-call tools and expected confirmations; `eval/run_agent.py` measures completion, tool-selection accuracy, forbidden-tool rate, confirmation-gating accuracy, model calls, latency and cost, and saves replies for manual review. The grading is unit-tested with a scripted model
-- [ ] **Run the agent eval with an API key** and commit the first results (fairness and email cases need a human read of the replies)
+- [x] **Agent eval on the local model** (mistral 7B): 12/30 passed, completion 100%, tool selection 0.47, forbidden tools 0, confirmation gating 0.83, fairness 4/4, ~21 s per request (native tool calling: 6/30, tool selection 0.30). Failures: it stops after one lookup and never proposes pipeline actions. Replies of fairness and email cases still need a human read
+- [ ] Agent eval with Claude, and with qwen2.5:7b, for comparison
 - [ ] Stream replies to the UI (currently the full turn is returned at once)
 - [ ] Render Markdown (tables) in assistant replies
 
 **Done when:** the agent eval is reported, and the agent never computes a score itself. *(Harness ready and tested; the run needs an API key. The second part holds by construction: no tool lets the model set a score.)*
 
+## Local LLM (Ollama)
+
+- [x] `LLM_PROVIDER=ollama` (default) or `anthropic`; extraction through structured outputs (JSON schema `format`, every top-level key required); assistant through an adapter that keeps the stored Anthropic-format history
+- [x] GPU: `num_gpu=99` puts mistral 7B fully on a 6 GB RTX 3050 at an 8k context (38 tok/s, vs 22 with Ollama's default CPU/GPU split); output capped per call (`num_predict`) so a repeating model cannot run for minutes
+- [x] Structured tool mode for the assistant: enum-constrained routing, schema-constrained arguments, ids restricted to ids seen in tool results, no answer before a lookup, loop guard (mistral 7B called no tool natively with 11 tools offered)
+- [ ] Try `qwen2.5:7b` (strong at tool calling, fits 6 GB) in `native` and `structured` modes and compare on the agent eval
+- [ ] Neural embeddings through Ollama (`nomic-embed-text`) to replace the hashing embedder; compare recall@K
+
 ## Phase 6 — Fairness, security, discovery
 
-- [ ] Counterfactual bias tests in CI (name and gender swap → score delta must be 0)
-- [ ] Adversarial set: prompt-injection CVs, hidden text, bad scans → score unchanged and file flagged
-- [ ] Selection-rate monitoring (4/5 rule) on feedback data
-- [ ] Encryption at rest for documents, PII-free logs, retention purge job, candidate export and delete endpoints
-- [ ] Audit log viewer
+- [x] Counterfactual bias tests in CI: 8 names from several origins, gendered French titles, protected mentions in free text, ranking invariance, schema has no protected fields; dedicated CI step
+- [x] Adversarial set through the upload API: white/tiny/off-page text, keyword stuffing, EN/FR prompt injection, blank scan → file flagged, planted skills unverified, score equal to the clean CV. The suite found two detector misses, now fixed, and false positives are tested
+- [x] Protected characteristics removed from extracted profiles by a deterministic pass (the local model kept a marital status in the first eval run); assistant policy guard refuses protected-characteristic requests before any model call
+- [ ] Selection-rate monitoring (4/5 rule): needs voluntary, separately stored equal-opportunity data, which the system deliberately does not collect yet
+- [x] Encryption at rest (Fernet, key rotation, migration script; production refuses to start without a key), PII-masking log filter, retention job (`scripts.retention`), candidate export and erasure endpoints
+- [x] Talent-pool consent field; `REQUIRE_TALENT_POOL_CONSENT` restricts rankings, search and recommendations
+- [x] Audit log API and viewer (`/audit`)
+- [x] Transparency notice for candidates (`/privacy`), built from the live configuration
+- [ ] "Request human review" flow for candidates (needs the candidate space)
 - [ ] External job sources through official APIs only (e.g. Adzuna), with the same parse, dedup and match pipeline
 - [ ] Candidate space: gap analysis + CV advice
-- [ ] Transparency notice and "request human review" flow for candidates
+- [ ] Authentication and roles (recruiter, admin, DPO); until then audit actors are generic ("recruiter")
 
-**Done when:** the bias and injection suites run in CI, and the GDPR export and delete flows work end to end.
+**Done when:** the bias and injection suites run in CI, and the GDPR export and delete flows work end to end. *(Done: both suites run as a CI step; export and erasure are tested end to end through the API and available in the UI.)*
 
 ## Ongoing
 

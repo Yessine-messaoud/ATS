@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import time
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -89,7 +90,8 @@ def grade(case: dict[str, Any], conversation: AgentConversationRecord, error: st
 def run(db: Session, model: AgentModel, cases: list[dict[str, Any]], settings: Settings) -> dict[str, Any]:
     seed(db)
     rows = []
-    for case in cases:
+    for index, case in enumerate(cases, start=1):
+        started = time.perf_counter()
         conversation = AgentConversationRecord(blind=False, messages=[], usage={})
         db.add(conversation)
         db.flush()
@@ -102,6 +104,9 @@ def run(db: Session, model: AgentModel, cases: list[dict[str, Any]], settings: S
         except LLMError as exc:
             error = str(exc)
         rows.append(grade(case, conversation, error))
+        status = "pass" if rows[-1]["passed"] else "FAIL"
+        elapsed = time.perf_counter() - started
+        print(f"[{index}/{len(cases)}] {status} {case['id']} ({elapsed:.0f}s)", file=sys.stderr, flush=True)
 
     def rate(key: str) -> float:
         return round(sum(r["checks"][key] for r in rows) / len(rows), 3) if rows else 0.0
