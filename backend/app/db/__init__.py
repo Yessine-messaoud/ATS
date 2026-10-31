@@ -9,13 +9,21 @@ from .records import (
     CandidateRecord,
     CandidateSearchRecord,
     DocumentRecord,
+    IngestionTaskRecord,
     JobRecord,
     JobSearchRecord,
     MatchRecord,
+    OrganizationRecord,
+    OrganizationStatus,
+    Role,
+    SessionRecord,
+    TaskStatus,
     TaxonomyBroaderRecord,
     TaxonomySkillRecord,
+    UserRecord,
 )
-from .session import get_engine, get_session
+from .scope import set_audit_scope
+from .session import get_engine, get_session, new_session
 
 __all__ = [
     "AgentConversationRecord",
@@ -26,11 +34,20 @@ __all__ = [
     "CandidateRecord",
     "CandidateSearchRecord",
     "DocumentRecord",
+    "IngestionTaskRecord",
     "JobRecord",
     "JobSearchRecord",
     "MatchRecord",
+    "OrganizationRecord",
+    "OrganizationStatus",
+    "Role",
+    "SessionRecord",
+    "TaskStatus",
     "TaxonomyBroaderRecord",
     "TaxonomySkillRecord",
+    "UserRecord",
     "get_engine",
     "get_session",
+    "new_session",
+    "set_audit_scope",
 ]

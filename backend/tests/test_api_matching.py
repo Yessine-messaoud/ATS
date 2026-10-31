@@ -8,7 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_llm
-from app.db import AuditLogRecord, CandidateRecord, JobRecord, MatchRecord, get_session
+from app.db import AuditLogRecord, CandidateRecord, JobRecord, MatchRecord, OrganizationRecord, get_session
 from app.main import app
 from tests.conftest import FakeLLM
 
@@ -29,12 +29,12 @@ def client(db: Session) -> Iterator[TestClient]:
 
 
 @pytest.fixture
-def pool(db: Session) -> dict[str, CandidateRecord | JobRecord]:
+def pool(db: Session, org: OrganizationRecord) -> dict[str, CandidateRecord | JobRecord]:
     records: dict[str, CandidateRecord | JobRecord] = {}
     for name in ("en-01-data-engineer", "fr-01-analyste-bi", "en-03-adversarial"):
-        records[name] = CandidateRecord(profile=load("candidates", name), schema_version="2")
+        records[name] = CandidateRecord(profile=load("candidates", name), schema_version="2", organization_id=org.id)
     profile = load("jobs", "job-01-data-engineer")
-    records["job"] = JobRecord(title="Data Engineer", profile=profile, schema_version="2")
+    records["job"] = JobRecord(title="Data Engineer", profile=profile, schema_version="2", organization_id=org.id)
     db.add_all(records.values())
     db.flush()
     return records

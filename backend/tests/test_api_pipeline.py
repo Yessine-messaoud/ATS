@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from app.db import AuditLogRecord, CandidateRecord, JobRecord, get_session
 from app.main import app
 from scripts.seed_demo import seed
+from tests.conftest import default_organization
 
 
 @pytest.fixture
@@ -19,7 +20,7 @@ def client(db: Session) -> Iterator[TestClient]:
 
 @pytest.fixture
 def demo(db: Session) -> dict[str, int]:
-    return seed(db)
+    return seed(db, default_organization(db))
 
 
 def candidate_named(db: Session, name: str) -> CandidateRecord:
@@ -32,7 +33,7 @@ def job_titled(db: Session, title: str) -> JobRecord:
 
 def test_seed_is_idempotent(db: Session, demo: dict[str, int]) -> None:
     assert demo == {"candidates": 6, "jobs": 3, "applications": 4}
-    assert seed(db) == {"candidates": 0, "jobs": 0, "applications": 0}
+    assert seed(db, default_organization(db)) == {"candidates": 0, "jobs": 0, "applications": 0}
 
 
 def test_seeded_adversarial_cv_is_flagged(client: TestClient, db: Session, demo: dict[str, int]) -> None:

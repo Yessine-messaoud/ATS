@@ -6,7 +6,7 @@ A phase is complete when its **Done when** line is true.
 ## Phase 0 — Foundations
 
 - [x] `git init` + baseline commit
-- [ ] Create the GitHub repo and push (needs a remote — owner decision)
+- [x] Create the GitHub repo and push (needs a remote — owner decision)
 - [x] Fix `.gitignore`: add `!.env.example` (A§3.1-3)
 - [x] Create a Python 3.12 environment with `uv`. Replace `requirements.txt` with `pyproject.toml` + `uv.lock` and raise the pins (pydantic ≥ 2.11) (A§3.1-1)
 - [x] Add ruff + mypy + pytest config and pre-commit hooks
@@ -47,7 +47,7 @@ A phase is complete when its **Done when** line is true.
 - [ ] Grow the gold set to 15 CVs + 5 jobs, including real anonymised CVs (with consent) and two-column layouts
 - [x] `eval/run_extraction.py`: per-field P/R/F1, unverified (hallucination) rate, sensitive leaks, security flags, cost and latency, written to `eval/results/`
 - [x] **First eval runs** on the local model (mistral 7B, GPU, $0): skills F1 0.917, required skills 1.0, languages 0.978, experiences 0.842, unverified evidence 4.0%, sensitive leaks 0 (1 before the protected-attribute pass), ~69 s per document. Weakest: preferred skills (recall 0.30). Claude run still to do when a key is available
-- [ ] Move extraction to a background task (uploads currently block while the LLM call runs)
+- [ ] Move recruiter uploads to the background queue too (job-board CVs already use it, Phase 7)
 
 **Done when:** skill extraction F1 is measured and reported on the gold set, and hallucination rate is measured.
 
@@ -87,7 +87,7 @@ A phase is complete when its **Done when** line is true.
 - [x] Recruiter corrections saved as feedback data: the first extraction is kept in `extracted_profile`, and the audit log records changed paths only (no personal data)
 - [x] Per-job weights page; job open/closed status
 - [x] Demo seed script (`scripts/seed_demo.py`, idempotent, no LLM); frontend Docker image; `docker compose up` runs the full stack
-- [ ] Authentication and per-recruiter audit actor (currently `recruiter`)
+- [x] Authentication and per-recruiter audit actor (currently `recruiter`)
 - [ ] Browser end-to-end tests (Playwright) for the interactive flows: upload, save review, drag-and-drop
 - [ ] Highlight evidence quotes inside the source document text
 - [ ] Interface in French as well as English (i18n)
@@ -108,7 +108,7 @@ A phase is complete when its **Done when** line is true.
 - [ ] Cross-encoder rerank: skipped. Final ordering is the deterministic score, so a reranker would only change the shortlist, and recall@10 is already 1.0
 - [x] Candidate → job recommendations (Phase 2) + talent rediscovery: rankings always cover the whole pool (or its hybrid shortlist), including past applicants
 - [x] Duplicate detection (email, phone, similar name + near-identical profile), flagged at upload; recruiter-confirmed merge moves applications and match history (UI + audit)
-- [ ] Talent-pool consent: only rediscover candidates who agreed (needs a consent field; see Phase 6)
+- [x] Talent-pool consent: only rediscover candidates who agreed (needs a consent field; see Phase 6)
 
 **Done when:** NDCG@10 improves over the Phase 2 baseline on the gold set. *(Not applicable as written: retrieval does not change the order, which is always the deterministic score. Measured instead: retrieval recall@K on a 306-candidate pool.)*
 
@@ -124,7 +124,7 @@ A phase is complete when its **Done when** line is true.
 - [x] **Agent eval on the local model** (mistral 7B): 12/30 passed, completion 100%, tool selection 0.47, forbidden tools 0, confirmation gating 0.83, fairness 4/4, ~21 s per request (native tool calling: 6/30, tool selection 0.30). Failures: it stops after one lookup and never proposes pipeline actions. Replies of fairness and email cases still need a human read
 - [ ] Agent eval with Claude, and with qwen2.5:7b, for comparison
 - [ ] Stream replies to the UI (currently the full turn is returned at once)
-- [ ] Render Markdown (tables) in assistant replies
+- [x] Render Markdown (tables) in assistant replies
 
 **Done when:** the agent eval is reported, and the agent never computes a score itself. *(Harness ready and tested; the run needs an API key. The second part holds by construction: no tool lets the model set a score.)*
 
@@ -149,9 +149,27 @@ A phase is complete when its **Done when** line is true.
 - [ ] "Request human review" flow for candidates (needs the candidate space)
 - [ ] External job sources through official APIs only (e.g. Adzuna), with the same parse, dedup and match pipeline
 - [ ] Candidate space: gap analysis + CV advice
-- [ ] Authentication and roles (recruiter, admin, DPO); until then audit actors are generic ("recruiter")
+- [x] Authentication and roles (recruiter, admin, DPO); until then audit actors are generic ("recruiter")
 
 **Done when:** the bias and injection suites run in CI, and the GDPR export and delete flows work end to end. *(Done: both suites run as a CI step; export and erasure are tested end to end through the API and available in the UI.)*
+
+## Phase 7 — Accounts, roles and portals
+
+- [x] Users, companies and sign-in sessions (scrypt passwords, hashed opaque tokens, httpOnly cookie, login throttling)
+- [x] Roles: platform admin, company recruiter, candidate; every route checks the role
+- [x] Company isolation: jobs, candidates, rankings, assistant tools, search, duplicates and audit log scoped per company (404 outside)
+- [x] Audit log names the real actor (`user:<id>`) and is filtered per company
+- [x] Admin console: overview, approve/suspend companies, create staff accounts, deactivate, reset passwords, CV queue
+- [x] Recruiter profile, company profile shown on the job board, team management
+- [x] Public job board (open jobs of approved companies) with search and filters
+- [x] Candidate portal: sign up, apply with a CV, follow status (never scores), withdraw, correct own profile, replace CV, consent, export, delete account
+- [x] Candidate self-edits can never raise a score (added or changed items are unverified)
+- [x] Background CV reading for job-board applications (database queue, worker thread, retries)
+- [x] Migration with backfill of existing data; 21 new tests; end-to-end browser check of all three roles
+- [ ] Email delivery (sign-up confirmation, password reset by email, status-change notifications); needs an SMTP provider
+- [ ] Interview scheduling and messages between recruiter and candidate
+- [ ] Per-company roles (owner vs member) and SSO for companies
+- [ ] Playwright role checks in CI (they run locally today)
 
 ## Ongoing
 

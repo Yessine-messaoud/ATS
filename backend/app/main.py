@@ -6,9 +6,12 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api import router as api_router
+from app.api.deps import get_llm
 from app.config import get_settings
+from app.db import new_session
 from app.security.crypto import get_cipher
 from app.security.logs import install_pii_filter
+from app.services.tasks import Worker
 from app.services.taxonomy import activate_stored_taxonomy
 
 settings = get_settings()
@@ -23,7 +26,12 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     for problem in problems:
         logging.getLogger("app").warning(problem)
     activate_stored_taxonomy()
+    worker = Worker(new_session, get_llm, settings) if settings.ingestion_worker else None
+    if worker:
+        worker.start()
     yield
+    if worker:
+        worker.stop()
 
 
 app = FastAPI(title=settings.app_name, version="0.1.0", debug=settings.debug, lifespan=lifespan)
@@ -31,7 +39,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
     allow_methods=["*"],
-    allow_headers=["*"],
+    allow_headers=["Authorization", "Content-Type"],
 )
 app.include_router(api_router)
 

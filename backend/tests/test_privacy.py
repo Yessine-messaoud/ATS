@@ -27,7 +27,7 @@ from app.security.logs import PiiFilter, redact
 from app.services.matching import rank_candidates, recommend_jobs
 from app.services.privacy import run_retention
 from scripts.encrypt_documents import run as encrypt_documents
-from tests.conftest import FakeLLM, make_pdf
+from tests.conftest import FakeLLM, default_organization, make_pdf
 from tests.test_extraction import VALID_CV
 
 JOB_PROFILE = {"title": "Data Engineer", "skill_requirements": [{"name": "Python", "requirement": "required"}]}
@@ -66,7 +66,13 @@ def stored_bytes(db: Session, column: str) -> bytes:
 
 
 def add_job(db: Session, status: str = "open") -> JobRecord:
-    job = JobRecord(title="Data Engineer", profile=JOB_PROFILE, schema_version="2", status=status)
+    job = JobRecord(
+        title="Data Engineer",
+        profile=JOB_PROFILE,
+        schema_version="2",
+        status=status,
+        organization_id=default_organization(db).id,
+    )
     db.add(job)
     db.flush()
     return job

@@ -56,6 +56,43 @@ Extraction, match explanations and the assistant use the provider set by `LLM_PR
 
 If the LLM is unreachable, the API still runs: AI endpoints return `503`, and the tests use a scripted fake LLM.
 
+### Accounts and roles (Phase 7)
+
+Everyone signs in. There are three roles:
+
+| Role | Who | Sees |
+|---|---|---|
+| **Admin** | The platform operator | Every company, account and audit entry. Approves or suspends companies, creates staff accounts, resets passwords, watches CV processing. Does not post jobs. |
+| **Recruiter** | A member of a hiring company | Only their company: its jobs, the CVs it uploaded, the people who applied to its jobs, and job-board candidates who opened their profile to all companies. Manages the company profile and team. |
+| **Candidate** | A job seeker | The public job board, their own applications (status only, never scores), their profile, and their data (export, delete). |
+
+Create the first accounts from `backend/` (a password is generated and printed once unless `--password` is given):
+
+```bash
+uv run python -m scripts.create_user --role admin --email admin@example.com --name "Platform Admin"
+uv run python -m scripts.create_user --role recruiter --email rh@demo.test --name "Rania" --company "Demo company"
+```
+
+Companies can also sign up at `/signup?type=company`; they start **pending** and their jobs stay off the job board until
+an admin approves them (`AUTO_APPROVE_COMPANIES=true` skips this in development). Candidates sign up at `/signup`.
+
+How it works:
+
+- **Sessions.** `POST /api/auth/login` returns an opaque token; the database stores only its SHA-256. The Next.js server
+  keeps the token in an httpOnly cookie and forwards it as a bearer token: browsers never read it and never call the API.
+  Passwords are hashed with scrypt; 5 failed sign-ins lock an email for 15 minutes; changing a password or deactivating
+  an account signs it out everywhere; suspending a company signs out its recruiters.
+- **Company isolation** (`app/services/access.py`). Every recruiter query is filtered by company; another company's
+  records answer `404`, not `403`. Rankings, the assistant's tools, search, duplicate detection and the audit log are
+  scoped the same way. Audit entries carry the company they belong to and name the actor as `user:<id>`.
+- **Portal candidates own their profile.** Companies they applied to can read it and decide, but cannot edit, merge,
+  export or erase it. When a candidate corrects their profile, anything added or changed is marked unverified, so it
+  earns no matching credit: a candidate can remove or fix information, never raise their own score.
+- **Background CV reading** (`app/services/tasks.py`). A job-board application stores the CV (encrypted) in
+  `ingestion_tasks`; a worker thread in the API reads it (about a minute on a local 7B model), creates or updates the
+  profile, then the application. The candidate sees "Reading your CV…" until then. Tasks survive restarts, and LLM
+  outages are retried up to `INGESTION_MAX_ATTEMPTS` times.
+
 ## API (Phase 1)
 
 | Endpoint | Purpose |

@@ -39,6 +39,8 @@ def _email_key(email: str | None) -> str | None:
 
 
 def find_duplicates(db: Session, candidate: CandidateRecord) -> list[DuplicateCandidate]:
+    if candidate.user_id is not None:
+        return []  # a portal account is one person by construction; they replace their CV instead
     profile = CandidateProfile.model_validate(candidate.profile)
     email, phone = _email_key(profile.identity.email), _phone_key(profile.identity.phone)
     name = normalize_text(profile.identity.full_name or "")
@@ -55,8 +57,10 @@ def find_duplicates(db: Session, candidate: CandidateRecord) -> list[DuplicateCa
             )
         )
 
+    # Only within the same owner: a company never learns that someone is also known to another company.
+    same_owner = CandidateRecord.organization_id.is_not_distinct_from(candidate.organization_id)
     duplicates = []
-    for other in db.scalars(select(CandidateRecord).where(CandidateRecord.id != candidate.id)):
+    for other in db.scalars(select(CandidateRecord).where(CandidateRecord.id != candidate.id, same_owner)):
         other_profile = CandidateProfile.model_validate(other.profile)
         reasons = []
         if email and email == _email_key(other_profile.identity.email):

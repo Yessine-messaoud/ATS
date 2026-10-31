@@ -1,7 +1,8 @@
 """Load the synthetic demo data set (6 candidates, 3 jobs, a small pipeline) without calling the LLM.
 
 Usage (from backend/):  uv run python -m scripts.seed_demo
-Idempotent: documents already present (same SHA-256) are skipped.
+Idempotent: documents already present (same SHA-256) are skipped. Everything belongs to the active company "Demo
+company" (created if missing). Create accounts with `python -m scripts.create_user`.
 """
 
 from __future__ import annotations
@@ -14,7 +15,16 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.config import Settings
-from app.db import ApplicationRecord, ApplicationStage, CandidateRecord, DocumentRecord, JobRecord, get_engine
+from app.db import (
+    ApplicationRecord,
+    ApplicationStage,
+    CandidateRecord,
+    DocumentRecord,
+    JobRecord,
+    OrganizationRecord,
+    OrganizationStatus,
+    get_engine,
+)
 from app.extraction.evidence import verify_evidence
 from app.ingestion import ingest_document
 from app.ingestion.pipeline import DocumentFlag
@@ -40,8 +50,25 @@ def _existing(db: Session, sha: str) -> DocumentRecord | None:
     return db.scalar(select(DocumentRecord).where(DocumentRecord.sha256 == sha))
 
 
-def seed(db: Session) -> dict[str, int]:
+def demo_company(db: Session) -> OrganizationRecord:
+    organization = db.scalar(select(OrganizationRecord).where(OrganizationRecord.name == "Demo company"))
+    if organization is None:
+        organization = OrganizationRecord(
+            name="Demo company",
+            status=OrganizationStatus.ACTIVE,
+            city="Tunis",
+            industry="Technology",
+            description="Sample company holding the synthetic demo data set.",
+        )
+        db.add(organization)
+        db.flush()
+    return organization
+
+
+def seed(db: Session, organization: OrganizationRecord | None = None) -> dict[str, int]:
+    """Load the data set for `organization` (default: the demo company)."""
     settings = Settings()
+    owner = (organization or demo_company(db)).id
     created = {"candidates": 0, "jobs": 0, "applications": 0}
     candidates: dict[str, CandidateRecord] = {}
     jobs: dict[str, JobRecord] = {}
@@ -78,6 +105,7 @@ def seed(db: Session) -> dict[str, int]:
             schema_version=profile.schema_version,
             email=profile.identity.email,
             source_document_id=document.id,
+            organization_id=owner,
             extraction_meta={
                 "model": "demo-seed",
                 "prompt_version": "fixture",
@@ -117,6 +145,7 @@ def seed(db: Session) -> dict[str, int]:
             schema_version=profile_job.schema_version,
             requirements_validated=fixture.stem == "job-01-data-engineer",
             source_document_id=document.id,
+            organization_id=owner,
             extraction_meta={"model": "demo-seed", "prompt_version": "fixture"},
         )
         db.add(job)

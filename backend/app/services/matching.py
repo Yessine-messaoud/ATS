@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 from dataclasses import dataclass
 
-from sqlalchemy import ColumnElement, func, or_, select
+from sqlalchemy import ColumnElement, and_, func, or_, select
 from sqlalchemy.orm import Session
 
 from app.db import ApplicationRecord, AuditLogRecord, CandidateRecord, JobRecord, MatchRecord
@@ -14,6 +14,7 @@ from app.matching import MatchResult, ScoringWeights, match
 from app.matching.explain import explain
 from app.models import CandidateProfile, JobProfile
 from app.search.retrieval import retrieve_candidates
+from app.services.access import candidates_visible_to
 
 
 @dataclass
@@ -87,11 +88,13 @@ class RankingRun:
 
 
 def pool_condition(job: JobRecord, *, consent_required: bool) -> ColumnElement[bool]:
-    """Who may be matched to a job: everyone, or (with consent required) the talent pool plus the job's applicants."""
+    """Who may be matched to a job: candidates the job's company can see; with consent required, only those in the
+    talent pool or who applied to this job."""
+    visible = candidates_visible_to(job.organization_id)
     if not consent_required:
-        return CandidateRecord.id.is_not(None)
+        return visible
     applicants = select(ApplicationRecord.candidate_id).where(ApplicationRecord.job_id == job.id)
-    return or_(CandidateRecord.talent_pool_consent.is_(True), CandidateRecord.id.in_(applicants))
+    return and_(visible, or_(CandidateRecord.talent_pool_consent.is_(True), CandidateRecord.id.in_(applicants)))
 
 
 def rank_candidates(
@@ -128,14 +131,21 @@ def rank_candidates(
 
 
 def recommend_jobs(
-    db: Session, candidate: CandidateRecord, *, limit: int, consent_required: bool = False
+    db: Session,
+    candidate: CandidateRecord,
+    *,
+    limit: int,
+    consent_required: bool = False,
+    jobs: ColumnElement[bool] | None = None,
 ) -> list[RecommendedJob]:
+    """Open jobs ranked for a candidate; `jobs` restricts them (a company sees only its own)."""
     query = select(JobRecord).where(JobRecord.status == "open")
+    if jobs is not None:
+        query = query.where(jobs)
     if consent_required and candidate.talent_pool_consent is not True:
         applied = select(ApplicationRecord.job_id).where(ApplicationRecord.candidate_id == candidate.id)
         query = query.where(JobRecord.id.in_(applied))
-    jobs = db.scalars(query)
-    recommended = [RecommendedJob(job, score(candidate, job)) for job in jobs]
+    recommended = [RecommendedJob(job, score(candidate, job)) for job in db.scalars(query)]
     recommended.sort(key=lambda r: (not r.result.passed_knockouts, -r.result.overall_score))
     return recommended[:limit]
 

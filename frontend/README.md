@@ -1,7 +1,11 @@
 # ATS frontend (Next.js 16)
 
-Recruiter interface: jobs and requirement validation, CV upload and evidence review, explainable ranking,
-pipeline board.
+Three areas in one Next.js app, each with its own layout (route groups):
+
+- `(staff)`: the recruiter ATS (jobs, candidates, ranking, pipeline, assistant, analytics) and, for platform
+  admins, the administration console. Navy sidebar; the menu depends on the role.
+- `(portal)`: the public job board (`/careers`) and the candidate space (`/me`). Light top navigation.
+- `(auth)`: sign-in and sign-up.
 
 ## Architecture
 
@@ -18,6 +22,11 @@ pipeline board.
   ```
 
 - The original uploaded CV is streamed through `/candidates/[id]/file`, served with a `sandbox` CSP.
+- **Sessions.** Signing in stores the API's session token in an httpOnly, SameSite=Lax cookie (`ra_session`);
+  `lib/api.ts` forwards it as a bearer token. `lib/session.ts` gives layouts the current user (`requireUser(roles)`
+  redirects visitors to `/login?next=…` and other roles to their own home). `src/proxy.ts` only does the cheap
+  "no cookie" redirect; the API is the real authority on roles and company isolation. An expired session sends the
+  user back to sign in.
 
 ## Interface (RecruitAI design)
 
@@ -29,7 +38,6 @@ pipeline board.
   rather than invented:
   - *Draft* job status: the backend only has open or closed jobs, plus validated or not.
   - Company logos: not stored, so the company initial is shown.
-  - Recruiter accounts: single-user mode for now.
   - Free-form comments: notes are recorded with each stage decision instead.
   Analytics can preview illustrative figures on request (`?sample=1`). Every chart is then badged **Sample data** and
   a banner explains it.
@@ -60,7 +68,12 @@ pipeline board.
 | `/matches/[id]` | CV evaluation: score, coverage, strengths and gaps, AI summary, CV preview, recruiter decision and history. |
 | `/analytics` | Six charts with 7, 30 or 90-day and custom date ranges: applications over time, pipeline, funnel, top skills, applications per job, score distribution. |
 | `/assistant` | Chat with the recruitment assistant (actions need confirmation). |
-| `/audit`, `/settings`, `/privacy` | Audit log; preferences and read-only configuration; candidate notice. |
+| `/audit`, `/settings` | Activity log (the recruiter's company, or everything for admins); preferences and read-only configuration. |
+| `/profile` · `/company` | The signed-in staff member's profile and password; the company profile shown on the job board, and the team (add, deactivate recruiters). |
+| `/admin` · `/admin/companies` · `/admin/users` | Admins: platform overview and system health, approve/suspend companies, staff accounts and password resets. |
+| `/careers` · `/careers/[id]` | Public job board with search and filters; job and company details; apply panel. |
+| `/me` · `/me/profile` · `/me/settings` | Candidates: applications with progress (no scores), withdraw; profile read from the CV, corrections, new CV; account, visibility consent, data export, account deletion. |
+| `/login` · `/signup` · `/privacy` | Sign-in, sign-up (candidate or company), candidate privacy notice. |
 
 ## Development
 

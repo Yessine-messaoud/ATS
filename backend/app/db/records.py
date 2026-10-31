@@ -43,6 +43,87 @@ class ApplicationStage(StrEnum):
     WITHDRAWN = "withdrawn"
 
 
+class Role(StrEnum):
+    ADMIN = "admin"
+    RECRUITER = "recruiter"
+    CANDIDATE = "candidate"
+
+
+class OrganizationStatus(StrEnum):
+    PENDING = "pending"
+    ACTIVE = "active"
+    SUSPENDED = "suspended"
+
+
+class TaskStatus(StrEnum):
+    QUEUED = "queued"
+    PROCESSING = "processing"
+    DONE = "done"
+    FAILED = "failed"
+
+
+def _enum(enum: type[StrEnum], name: str) -> Enum:
+    return Enum(enum, name=name, values_callable=lambda e: [m.value for m in e])
+
+
+class OrganizationRecord(IdMixin, TimestampMixin, Base):
+    """A hiring company. Its recruiters see only its jobs, its own candidates and the people who applied to it."""
+
+    __tablename__ = "organizations"
+
+    name: Mapped[str] = mapped_column(String(255))
+    status: Mapped[OrganizationStatus] = mapped_column(
+        _enum(OrganizationStatus, "organization_status"), default=OrganizationStatus.PENDING
+    )
+    website: Mapped[str | None] = mapped_column(String(255))
+    industry: Mapped[str | None] = mapped_column(String(128))
+    size: Mapped[str | None] = mapped_column(String(32))
+    city: Mapped[str | None] = mapped_column(String(128))
+    description: Mapped[str | None] = mapped_column(Text)
+
+    users: Mapped[list[UserRecord]] = relationship(back_populates="organization")
+
+
+class UserRecord(IdMixin, TimestampMixin, Base):
+    """A person who signs in: a platform admin, a company recruiter, or a candidate."""
+
+    __tablename__ = "users"
+
+    email: Mapped[str] = mapped_column(String(320), unique=True)
+    password_hash: Mapped[str] = mapped_column(String(255))
+    full_name: Mapped[str] = mapped_column(String(255))
+    role: Mapped[Role] = mapped_column(_enum(Role, "user_role"))
+    organization_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("organizations.id", ondelete="CASCADE"), index=True
+    )
+    job_title: Mapped[str | None] = mapped_column(String(128))
+    phone: Mapped[str | None] = mapped_column(String(64))
+    locale: Mapped[str] = mapped_column(String(8), default="en")
+    preferences: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
+    is_active: Mapped[bool] = mapped_column(default=True)
+    last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    organization: Mapped[OrganizationRecord | None] = relationship(back_populates="users")
+
+    @property
+    def actor(self) -> str:
+        """How this user appears in the audit log (an id, never a name or an email)."""
+        return f"user:{self.id}"
+
+
+class SessionRecord(IdMixin, Base):
+    """A sign-in session. Only a hash of the token is stored, so a database leak does not leak sessions."""
+
+    __tablename__ = "sessions"
+
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    token_hash: Mapped[str] = mapped_column(String(64), unique=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+
+    user: Mapped[UserRecord] = relationship()
+
+
 class DocumentRecord(IdMixin, TimestampMixin, Base):
     """An uploaded source document (CV, email, job description) and its extracted text."""
 
@@ -71,6 +152,12 @@ class CandidateRecord(IdMixin, TimestampMixin, Base):
     # Consent to be kept in the talent pool and matched to other jobs. None = not asked yet.
     talent_pool_consent: Mapped[bool | None] = mapped_column()
     consent_updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # The company that uploaded the CV (its private pool), or None when the candidate came through the portal.
+    organization_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("organizations.id", ondelete="CASCADE"), index=True
+    )
+    # The candidate's own account (portal candidates): they own this profile and correct it themselves.
+    user_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), unique=True)
 
     applications: Mapped[list[ApplicationRecord]] = relationship(back_populates="candidate")
 
@@ -86,8 +173,13 @@ class JobRecord(IdMixin, TimestampMixin, Base):
     scoring_weights: Mapped[dict[str, float] | None] = mapped_column(JSONB)
     source_document_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("documents.id", ondelete="SET NULL"))
     extraction_meta: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
+    organization_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("organizations.id", ondelete="CASCADE"), index=True
+    )
+    created_by_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
 
     applications: Mapped[list[ApplicationRecord]] = relationship(back_populates="job")
+    organization: Mapped[OrganizationRecord | None] = relationship()
 
 
 class ApplicationRecord(IdMixin, TimestampMixin, Base):
@@ -100,6 +192,8 @@ class ApplicationRecord(IdMixin, TimestampMixin, Base):
         Enum(ApplicationStage, name="application_stage", values_callable=lambda e: [m.value for m in e]),
         default=ApplicationStage.NEW,
     )
+    # "recruiter" (added from a ranking or by the assistant) or "portal" (the candidate applied).
+    source: Mapped[str] = mapped_column(String(16), default="recruiter", server_default="recruiter")
 
     candidate: Mapped[CandidateRecord] = relationship(back_populates="applications")
     job: Mapped[JobRecord] = relationship(back_populates="applications")
@@ -130,6 +224,10 @@ class AuditLogRecord(IdMixin, Base):
     entity_type: Mapped[str] = mapped_column(String(32))
     entity_id: Mapped[uuid.UUID | None] = mapped_column(index=True)
     details: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
+    # The company the entry belongs to, so that each company sees only its own log (see app.db.scope).
+    organization_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("organizations.id", ondelete="SET NULL"), index=True
+    )
 
 
 EMBEDDING_DIM = 384
@@ -202,6 +300,25 @@ class AgentConversationRecord(IdMixin, TimestampMixin, Base):
     __tablename__ = "agent_conversations"
 
     blind: Mapped[bool] = mapped_column(default=False)
+    user_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
     messages: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, default=list)
     pending: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
     usage: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
+
+
+class IngestionTaskRecord(IdMixin, TimestampMixin, Base):
+    """A CV waiting to be read in the background (portal applications), and the application to create after."""
+
+    __tablename__ = "ingestion_tasks"
+
+    status: Mapped[TaskStatus] = mapped_column(_enum(TaskStatus, "task_status"), default=TaskStatus.QUEUED, index=True)
+    filename: Mapped[str | None] = mapped_column(String(255))
+    content: Mapped[bytes | None] = mapped_column(EncryptedBytes)
+    user_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    job_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("jobs.id", ondelete="SET NULL"))
+    candidate_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("candidates.id", ondelete="SET NULL"))
+    talent_pool_consent: Mapped[bool | None] = mapped_column()
+    attempts: Mapped[int] = mapped_column(Integer, default=0)
+    error: Mapped[str | None] = mapped_column(Text)
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

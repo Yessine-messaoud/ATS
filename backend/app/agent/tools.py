@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from typing import Any, Literal
 
 from pydantic import BaseModel, Field
-from sqlalchemy import select
+from sqlalchemy import ColumnElement, select, true
 from sqlalchemy.orm import Session
 
 from app.db import ApplicationRecord, ApplicationStage, CandidateRecord, DocumentRecord, JobRecord
@@ -22,6 +22,7 @@ from app.matching.explain import template_explanation
 from app.matching.skills import normalize_text
 from app.models import CandidateProfile, JobProfile, RequirementKind
 from app.search.retrieval import hybrid_search
+from app.services.access import Scope
 from app.services.matching import blind_label, rank_candidates, recommend_jobs, score
 from app.services.pipeline import AlreadyInPipeline, add_to_pipeline, job_applications, move_application
 
@@ -39,6 +40,18 @@ class ToolContext:
     full_scoring_limit: int
     retrieval_k: int
     consent_required: bool = False
+    # The signed-in staff member: tools only see and change their company's data. None = unrestricted (tests, CLI).
+    scope: Scope | None = None
+
+    @property
+    def actor(self) -> str:
+        return f"{self.scope.actor} via assistant" if self.scope else AGENT_ACTOR
+
+    def jobs(self) -> ColumnElement[bool]:
+        return self.scope.jobs() if self.scope else true()
+
+    def candidates(self) -> ColumnElement[bool]:
+        return self.scope.candidates() if self.scope else true()
 
 
 # --- inputs ----------------------------------------------------------------------------------------------------------
@@ -88,14 +101,14 @@ class MoveIn(BaseModel):
 
 
 def _candidate(ctx: ToolContext, candidate_id: uuid.UUID) -> CandidateRecord:
-    record = ctx.db.get(CandidateRecord, candidate_id)
+    record = ctx.db.scalar(select(CandidateRecord).where(CandidateRecord.id == candidate_id, ctx.candidates()))
     if record is None:
         raise ToolError(f"no candidate with id {candidate_id}")
     return record
 
 
 def _job(ctx: ToolContext, job_id: uuid.UUID) -> JobRecord:
-    record = ctx.db.get(JobRecord, job_id)
+    record = ctx.db.scalar(select(JobRecord).where(JobRecord.id == job_id, ctx.jobs()))
     if record is None:
         raise ToolError(f"no job with id {job_id}")
     return record
@@ -120,7 +133,7 @@ def _candidate_brief(ctx: ToolContext, record: CandidateRecord) -> dict[str, Any
 
 
 def list_jobs(ctx: ToolContext, args: ListJobsIn) -> Any:
-    query = select(JobRecord).order_by(JobRecord.created_at.desc())
+    query = select(JobRecord).where(ctx.jobs()).order_by(JobRecord.created_at.desc())
     if args.status != "all":
         query = query.where(JobRecord.status == args.status)
     return [
@@ -138,12 +151,13 @@ def list_jobs(ctx: ToolContext, args: ListJobsIn) -> Any:
 
 def search_candidates(ctx: ToolContext, args: SearchCandidatesIn) -> Any:
     keywords = [w for w in normalize_text(args.query).split() if len(w) > 1]
-    hits = hybrid_search(ctx.db, args.query, keywords, k=args.limit)
-    query = select(CandidateRecord).where(CandidateRecord.id.in_([h.candidate_id for h in hits]))
+    # Over-fetch, since hits outside the company's candidates are dropped.
+    hits = hybrid_search(ctx.db, args.query, keywords, k=args.limit * 5 if ctx.scope else args.limit)
+    query = select(CandidateRecord).where(CandidateRecord.id.in_([h.candidate_id for h in hits]), ctx.candidates())
     if ctx.consent_required:
         query = query.where(CandidateRecord.talent_pool_consent.is_(True))
     records = {r.id: r for r in ctx.db.scalars(query)}
-    return [_candidate_brief(ctx, records[h.candidate_id]) for h in hits if h.candidate_id in records]
+    return [_candidate_brief(ctx, records[h.candidate_id]) for h in hits if h.candidate_id in records][: args.limit]
 
 
 def get_candidate(ctx: ToolContext, args: CandidateIdIn) -> Any:
@@ -271,7 +285,9 @@ def recommend_jobs_for_candidate(ctx: ToolContext, args: RecommendIn) -> Any:
             "passed_mandatory_criteria": r.result.passed_knockouts,
             "missing_required": r.result.missing_required,
         }
-        for r in recommend_jobs(ctx.db, candidate, limit=args.limit, consent_required=ctx.consent_required)
+        for r in recommend_jobs(
+            ctx.db, candidate, limit=args.limit, consent_required=ctx.consent_required, jobs=ctx.jobs()
+        )
     ]
 
 
@@ -294,18 +310,27 @@ def get_pipeline(ctx: ToolContext, args: JobIdIn) -> Any:
 def add_candidate_to_pipeline(ctx: ToolContext, args: PairIn) -> Any:
     candidate, job = _candidate(ctx, args.candidate_id), _job(ctx, args.job_id)
     try:
-        application = add_to_pipeline(ctx.db, candidate, job, actor=AGENT_ACTOR)
+        application = add_to_pipeline(ctx.db, candidate, job, actor=ctx.actor)
     except AlreadyInPipeline as exc:
         raise ToolError(str(exc)) from exc
     return {"application_id": str(application.id), "stage": application.stage.value}
 
 
+def _application(ctx: ToolContext, application_id: uuid.UUID) -> ApplicationRecord:
+    record = ctx.db.scalar(
+        select(ApplicationRecord)
+        .join(JobRecord, JobRecord.id == ApplicationRecord.job_id)
+        .where(ApplicationRecord.id == application_id, ctx.jobs())
+    )
+    if record is None:
+        raise ToolError(f"no application with id {application_id}")
+    return record
+
+
 def move_application_stage(ctx: ToolContext, args: MoveIn) -> Any:
-    application = ctx.db.get(ApplicationRecord, args.application_id)
-    if application is None:
-        raise ToolError(f"no application with id {args.application_id}")
+    application = _application(ctx, args.application_id)
     previous = application.stage.value
-    move_application(ctx.db, application, args.stage, actor=AGENT_ACTOR, reason=args.reason)
+    move_application(ctx.db, application, args.stage, actor=ctx.actor, reason=args.reason)
     return {"application_id": str(application.id), "from": previous, "to": application.stage.value}
 
 
@@ -409,7 +434,7 @@ def describe_action(ctx: ToolContext, name: str, raw_input: dict[str, Any]) -> s
             return f"Add {who} to the pipeline of “{_job(ctx, args.job_id).title}”"
         if name == "move_application_stage":
             move = MoveIn.model_validate(raw_input)
-            application = ctx.db.get(ApplicationRecord, move.application_id)
+            application = _application(ctx, move.application_id)
             if application is not None:
                 who = _name(ctx, application.candidate)
                 reason = f" (reason: {move.reason})" if move.reason else ""

@@ -16,9 +16,14 @@ def get_engine() -> Engine:
     return create_engine(get_settings().database_url, pool_pre_ping=True)
 
 
+def new_session() -> Session:
+    """A session for work outside a request (background worker, scripts); close it when done."""
+    return sessionmaker(bind=get_engine(), expire_on_commit=False)()
+
+
 def get_session() -> Iterator[Session]:
     """FastAPI dependency yielding a session that is closed after the request."""
-    session = sessionmaker(bind=get_engine(), expire_on_commit=False)()
+    session = new_session()
     try:
         yield session
     finally:

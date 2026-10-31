@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+import os
 from collections.abc import Iterator
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Annotated, Any
 
 import pymupdf
 import pytest
@@ -13,10 +14,72 @@ from sqlalchemy import Engine, create_engine, make_url, text
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
 
+os.environ.setdefault("INGESTION_WORKER", "false")  # tests process CV tasks explicitly
+os.environ["DOCUMENT_ENCRYPTION_KEYS"] = ""  # independent of a developer .env; tests set keys explicitly
+
+from fastapi import Depends
+from sqlalchemy import select
+
+from app.api.deps import get_current_user
 from app.config import get_settings
+from app.db import (
+    OrganizationRecord,
+    OrganizationStatus,
+    Role,
+    UserRecord,
+    get_session,
+    set_audit_scope,
+)
 from app.extraction import ToolCallResult, ToolSpec
+from app.main import app
 
 BACKEND = Path(__file__).parents[1]
+TEST_RECRUITER = "recruiter@test.local"
+
+
+def default_organization(db: Session) -> OrganizationRecord:
+    """The company the default test user recruits for (created on first use inside the test transaction)."""
+    user = default_recruiter(db)
+    assert user.organization is not None
+    return user.organization
+
+
+def default_recruiter(db: Session) -> UserRecord:
+    user = db.scalar(select(UserRecord).where(UserRecord.email == TEST_RECRUITER))
+    if user is None:
+        organization = OrganizationRecord(name="Test company", status=OrganizationStatus.ACTIVE)
+        user = UserRecord(
+            email=TEST_RECRUITER,
+            password_hash="!",  # cannot sign in with a password; tests use the dependency override below
+            full_name="Test Recruiter",
+            role=Role.RECRUITER,
+            organization=organization,
+            locale="en",
+            preferences={},
+            is_active=True,
+        )
+        db.add(user)
+        db.flush()
+    return user
+
+
+def _signed_in_recruiter(db: Annotated[Session, Depends(get_session)]) -> UserRecord:
+    user = default_recruiter(db)
+    set_audit_scope(db, user.organization_id)
+    return user
+
+
+@pytest.fixture(autouse=True)
+def signed_in_recruiter() -> Iterator[None]:
+    """API tests act as a recruiter of the test company unless they override `get_current_user` themselves."""
+    app.dependency_overrides[get_current_user] = _signed_in_recruiter
+    yield
+    app.dependency_overrides.pop(get_current_user, None)
+
+
+@pytest.fixture
+def org(db: Session) -> OrganizationRecord:
+    return default_organization(db)
 
 
 @pytest.fixture(scope="session")

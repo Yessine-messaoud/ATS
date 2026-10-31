@@ -54,6 +54,15 @@ class Settings(BaseSettings):
     # When on, a job's ranking only includes candidates who consented to the talent pool or applied to that job.
     require_talent_pool_consent: bool = False
 
+    # Accounts. Sign-in sessions last this long; companies that sign up wait for an admin unless auto-approved.
+    session_ttl_hours: int = 24 * 7
+    auto_approve_companies: bool = False
+
+    # Background CV processing (portal applications): a worker thread in the API process polls the task table.
+    ingestion_worker: bool = True
+    ingestion_poll_seconds: float = 2.0
+    ingestion_max_attempts: int = 3
+
     # Retrieval: pools up to this size are scored exhaustively; larger pools are shortlisted by hybrid retrieval.
     full_scoring_limit: int = 500
     retrieval_k: int = 200

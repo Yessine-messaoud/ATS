@@ -8,7 +8,16 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
-from app.db import ApplicationRecord, ApplicationStage, CandidateRecord, JobRecord
+from app.db import (
+    ApplicationRecord,
+    ApplicationStage,
+    CandidateRecord,
+    JobRecord,
+    OrganizationRecord,
+    OrganizationStatus,
+    Role,
+    UserRecord,
+)
 from app.matching import Knockout, MatchResult, ScoringWeights
 from app.models import CandidateProfile, JobProfile
 from app.services.matching import Ranked, RecommendedJob, blind_label
@@ -21,6 +30,9 @@ class CandidateOut(BaseModel):
     extraction: dict[str, Any]
     talent_pool_consent: bool | None = Field(description="Consent to be matched to other jobs; null = not asked.")
     consent_updated_at: datetime | None
+    source: Literal["company", "portal"] = Field(
+        "company", description="Uploaded by the company, or applied through the portal (the candidate owns it)."
+    )
 
     @classmethod
     def from_record(cls, record: CandidateRecord) -> CandidateOut:
@@ -31,6 +43,7 @@ class CandidateOut(BaseModel):
             extraction=record.extraction_meta,
             talent_pool_consent=record.talent_pool_consent,
             consent_updated_at=record.consent_updated_at,
+            source="portal" if record.user_id is not None else "company",
         )
 
 
@@ -45,6 +58,8 @@ class JobOut(BaseModel):
     requirements_validated: bool
     profile: JobProfile
     extraction: dict[str, Any]
+    organization_id: uuid.UUID | None = None
+    organization_name: str | None = None
 
     @classmethod
     def from_record(cls, record: JobRecord) -> JobOut:
@@ -55,6 +70,8 @@ class JobOut(BaseModel):
             requirements_validated=record.requirements_validated,
             profile=JobProfile.model_validate(record.profile),
             extraction=record.extraction_meta,
+            organization_id=record.organization_id,
+            organization_name=record.organization.name if record.organization else None,
         )
 
 
@@ -147,6 +164,7 @@ class AuditEntryOut(BaseModel):
     id: uuid.UUID
     created_at: datetime
     actor: str
+    actor_name: str | None = Field(None, description="The staff member's name, for `user:<id>` actors.")
     action: str
     entity_type: str
     entity_id: uuid.UUID | None
@@ -177,6 +195,7 @@ class ApplicationOut(BaseModel):
     display_name: str
     overall_score: float | None = None
     passed_knockouts: bool | None = None
+    source: str = "recruiter"
 
     @classmethod
     def build(
@@ -193,6 +212,7 @@ class ApplicationOut(BaseModel):
             display_name=blind_label(application.candidate_id) if blind or not name else name,
             overall_score=result.overall_score if result else None,
             passed_knockouts=result.passed_knockouts if result else None,
+            source=application.source,
         )
 
 
@@ -217,3 +237,62 @@ class DuplicateOut(BaseModel):
 
 class MergeIn(BaseModel):
     duplicate_id: uuid.UUID
+
+
+class OrganizationOut(BaseModel):
+    id: uuid.UUID
+    name: str
+    status: OrganizationStatus
+    website: str | None
+    industry: str | None
+    size: str | None
+    city: str | None
+    description: str | None
+    created_at: datetime
+
+    @classmethod
+    def from_record(cls, record: OrganizationRecord) -> OrganizationOut:
+        return cls.model_validate(record, from_attributes=True)
+
+
+class UserOut(BaseModel):
+    id: uuid.UUID
+    email: str
+    full_name: str
+    role: Role
+    organization: OrganizationOut | None
+    job_title: str | None
+    phone: str | None
+    locale: str
+    preferences: dict[str, Any]
+    is_active: bool
+    last_login_at: datetime | None
+    created_at: datetime
+
+    @classmethod
+    def from_record(cls, record: UserRecord) -> UserOut:
+        return cls(
+            id=record.id,
+            email=record.email,
+            full_name=record.full_name,
+            role=record.role,
+            organization=OrganizationOut.from_record(record.organization) if record.organization else None,
+            job_title=record.job_title,
+            phone=record.phone,
+            locale=record.locale,
+            preferences=record.preferences,
+            is_active=record.is_active,
+            last_login_at=record.last_login_at,
+            created_at=record.created_at,
+        )
+
+
+class SessionOut(BaseModel):
+    token: str = Field(description="Send as `Authorization: Bearer <token>`. Shown once; only its hash is stored.")
+    expires_at: datetime
+    user: UserOut
+
+
+class CreatedUserOut(BaseModel):
+    user: UserOut
+    temporary_password: str = Field(description="Shown once: give it to the person, who changes it after signing in.")

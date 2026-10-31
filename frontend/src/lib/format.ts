@@ -47,3 +47,15 @@ export function initials(name: string | null | undefined): string {
   const parts = (name ?? "?").trim().split(/\s+/);
   return ((parts[0]?.[0] ?? "?") + (parts.length > 1 ? parts[parts.length - 1][0] : "")).toUpperCase();
 }
+
+/** Who did it, for audit entries: the staff member's name, "a candidate" for portal users, or the system. */
+export function actorLabel(entry: { actor: string; actor_name?: string | null }): string {
+  if (entry.actor_name) return entry.actor_name;
+  if (entry.actor.startsWith("user:")) return entry.actor.endsWith("via assistant") ? "assistant" : "a candidate";
+  return entry.actor;
+}
+
+/** "full_time" → "Full time" (enum values shown to people). */
+export function humanize(value: string | null | undefined): string | null {
+  return value ? value.replace(/_/g, " ").replace(/^\w/, (c) => c.toUpperCase()) : null;
+}
