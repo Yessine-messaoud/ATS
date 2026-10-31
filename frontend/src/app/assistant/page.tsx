@@ -37,11 +37,11 @@ export default function AssistantPage() {
             name="prompt"
             rows={3}
             placeholder="Ask anything about your jobs and candidates…"
-            className="w-full resize-none rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm shadow-sm placeholder:text-zinc-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 dark:border-zinc-700 dark:bg-zinc-950"
+            className="w-full resize-none rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm shadow-sm placeholder:text-zinc-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30 dark:border-zinc-700 dark:bg-zinc-950"
           />
           <div className="flex flex-wrap items-center justify-between gap-3">
             <label className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
-              <input type="checkbox" name="blind" className="size-4 rounded border-zinc-300 accent-indigo-600" />
+              <input type="checkbox" name="blind" className="size-4 rounded border-zinc-300 accent-brand-600" />
               Blind screening (hide candidate names)
             </label>
             <Button type="submit" icon={<MessageSquare className="size-4" />}>
@@ -62,7 +62,7 @@ export default function AssistantPage() {
               <button
                 type="submit"
                 className={cx(
-                  "h-full w-full rounded-xl border border-zinc-200 bg-white p-3 text-left text-sm shadow-sm transition hover:border-indigo-300 hover:bg-indigo-50/40 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-indigo-700",
+                  "h-full w-full rounded-xl border border-zinc-200 bg-white p-3 text-left text-sm shadow-sm transition hover:border-brand-300 hover:bg-brand-50/40 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-brand-700",
                   focusRing,
                 )}
               >
@@ -76,7 +76,7 @@ export default function AssistantPage() {
       <ul className="grid gap-3 sm:grid-cols-3">
         {PROMISES.map(({ icon: Icon, text }) => (
           <li key={text} className="flex items-start gap-2 text-xs text-zinc-500">
-            <Icon className="mt-0.5 size-4 shrink-0 text-indigo-500" aria-hidden />
+            <Icon className="mt-0.5 size-4 shrink-0 text-brand-500" aria-hidden />
             {text}
           </li>
         ))}

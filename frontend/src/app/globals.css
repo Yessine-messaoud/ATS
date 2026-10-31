@@ -1,8 +1,42 @@
 @import "tailwindcss";
 
+/* Dark mode follows the `dark` class on <html>, set by the theme switcher (light, dark or system). */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme inline {
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+}
+
+@theme {
+  /* Brand: royal to electric blue. Used for actions, links, the active item and focus. */
+  --color-brand-50: #eef3ff;
+  --color-brand-100: #dde7ff;
+  --color-brand-200: #c2d3ff;
+  --color-brand-300: #98b4ff;
+  --color-brand-400: #678cff;
+  --color-brand-500: #3d64f5;
+  --color-brand-600: #2647e0;
+  --color-brand-700: #1d38b8;
+  --color-brand-800: #1c3193;
+  --color-brand-900: #1d2d74;
+  --color-brand-950: #141c45;
+
+  /* Navy: sidebar and dark surfaces. */
+  --color-navy-700: #26325e;
+  --color-navy-800: #18224a;
+  --color-navy-900: #111a3a;
+  --color-navy-950: #0b1229;
+
+  /* Lavender: secondary accent (soft highlights, AI-generated content). */
+  --color-lavender-50: #f5f3ff;
+  --color-lavender-100: #ede9fe;
+  --color-lavender-500: #8b5cf6;
+  --color-lavender-600: #7c3aed;
+
+  /* Page background. */
+  --color-canvas: #f4f6fc;
+  --color-canvas-dark: #0a0f1f;
 }
 
 @keyframes slide {
@@ -17,8 +51,16 @@
 @layer base {
   html {
     scrollbar-gutter: stable;
+    color-scheme: light;
+  }
+  html.dark {
+    color-scheme: dark;
   }
   ::selection {
-    background: rgb(99 102 241 / 0.2);
+    background: rgb(61 100 245 / 0.2);
+  }
+  /* Range inputs (sliders) in the brand colour. */
+  input[type="range"] {
+    accent-color: var(--color-brand-600);
   }
 }

@@ -16,7 +16,10 @@ const PAGES: Entry[] = [
   { key: "p-new-job", title: "Create a job", subtitle: "Paste a job description", href: "/jobs?new=1", icon: <Briefcase />, group: "Go to" },
   { key: "p-candidates", title: "Candidates", href: "/candidates", icon: <Users />, group: "Go to" },
   { key: "p-upload", title: "Upload CVs", href: "/candidates?upload=1", icon: <FileUp />, group: "Go to" },
-  { key: "p-assistant", title: "Assistant", href: "/assistant", icon: <MessageSquare />, group: "Go to" },
+  { key: "p-assistant", title: "AI Assistant", href: "/assistant", icon: <MessageSquare />, group: "Go to" },
+  { key: "p-eval", title: "CV Evaluation", href: "/evaluations", icon: <ShieldCheck />, group: "Go to" },
+  { key: "p-analytics", title: "Analytics", href: "/analytics", icon: <LayoutDashboard />, group: "Go to" },
+  { key: "p-settings", title: "Settings", href: "/settings", icon: <Briefcase />, group: "Go to" },
   { key: "p-audit", title: "Audit log", href: "/audit", icon: <ShieldCheck />, group: "Go to" },
 ];
 
@@ -133,7 +136,7 @@ function PaletteDialog({ onClose }: { onClose: () => void }) {
                   onClick={() => go(entry)}
                   className={cx(
                     "flex w-full items-center gap-3 rounded-md px-2 py-2 text-left text-sm",
-                    index === active ? "bg-indigo-50 text-indigo-900 dark:bg-indigo-950 dark:text-indigo-100" : "",
+                    index === active ? "bg-brand-50 text-brand-900 dark:bg-brand-950 dark:text-brand-100" : "",
                   )}
                 >
                   <span className="text-zinc-400 [&>svg]:size-4">{entry.icon}</span>

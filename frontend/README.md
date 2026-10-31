@@ -19,40 +19,48 @@ pipeline board.
 
 - The original uploaded CV is streamed through `/candidates/[id]/file`, served with a `sandbox` CSP.
 
-## Interface
+## Interface (RecruitAI design)
 
-- **Navigation.** Sidebar on desktop, top bar with a menu drawer on mobile, active page highlighted, breadcrumbs on
-  every detail page.
-- **Search: Ctrl+K / ⌘K** from anywhere. Jumps to a page, a job or a candidate. Search covers names, titles and
-  skills.
-- **Dashboard** (`/`): key numbers, a "needs your attention" queue (requirements to validate, flagged documents,
-  unverified items, new applications), pipeline progress per job, recent activity.
-- **Feedback.** Toasts confirm actions, skeletons show while pages load, and slow AI steps (job extraction, CV upload,
-  match explanation, assistant) show what is happening and the elapsed time.
-- **Accessibility.** Visible keyboard focus everywhere, a skip link, labelled controls, `aria-current` on navigation,
-  and the palette and lists are fully keyboard-driven. Light and dark themes follow the system setting.
-- Icons: `lucide-react`. Assistant replies render Markdown (tables, lists) with `react-markdown` and `remark-gfm`;
-  raw HTML is never rendered.
+- **Layout.** Navy sidebar (Dashboard, Jobs, Candidates, AI Assistant, CV Evaluation, Analytics, Audit Log,
+  Settings) with the recruiter profile at the bottom. The top bar has global search (**Ctrl+K / ⌘K**),
+  notifications, a theme switcher (light, dark or system, remembered per browser) and the profile menu. Brand tokens
+  (`brand`, `navy`, `lavender`, `canvas`) are defined in `app/globals.css`.
+- **Real data only.** Every number comes from the API. Some data does not exist in the backend yet, and is labelled
+  rather than invented:
+  - *Draft* job status: the backend only has open or closed jobs, plus validated or not.
+  - Company logos: not stored, so the company initial is shown.
+  - Recruiter accounts: single-user mode for now.
+  - Free-form comments: notes are recorded with each stage decision instead.
+  Analytics can preview illustrative figures on request (`?sample=1`). Every chart is then badged **Sample data** and
+  a banner explains it.
+- **Scores and AI, kept apart.** The evaluation page separates three layers:
+  - the deterministic **scoring engine** (score ring, criteria bars, skills coverage);
+  - the **AI-generated** summary (lavender panel, labelled, fact-checked against the factors);
+  - the **recruiter decision** (stage plus note, written to the audit log). Only this changes the pipeline; the AI
+    never rejects or advances a candidate.
+- **Charts.** Recharts Client Components receive pre-aggregated, non-personal series computed on the server
+  (`lib/analytics.ts`).
+- **Primitives.** Shared building blocks live in `components/ui.tsx` (server-safe) and
+  `components/interactive.tsx` (dropdown menu, native `<dialog>`, slider, sortable header, pagination).
+  Conflicting Tailwind classes are merged with `tailwind-merge`.
+- **Accessibility.** Visible focus everywhere, a skip link, ARIA roles on menus, dialogs, tabs, sliders and sort
+  headers, keyboard navigation in the palette and menus, and responsive layouts down to 375 px.
 
 ## Pages
 
 | Route | Purpose |
 |---|---|
-| `/` | Dashboard: numbers, to-do queue, pipelines, recent activity. |
-| `/jobs` | Job cards with search and status filters; "New job" opens the paste-a-description form (`?new=1`). |
-| `/jobs/[id]` | Ranking. Candidates meeting the mandatory criteria first, the others listed separately; blind screening toggle; add to pipeline; score details. |
-| `/jobs/[id]/requirements` | Review and validate the extracted requirements (required/preferred, levels, evidence). |
-| `/jobs/[id]/pipeline` | Kanban board (drag-and-drop or menu). Each move is logged as a recruiter decision. |
-| `/jobs/[id]/weights` | Per-job scoring weights, missing-skill penalty, knock-outs on/off. |
-| `/candidates` | Candidate list with search, review filters (needs review, security flag, talent pool) and sorting; multi-file CV upload (`?upload=1`). |
-| `/candidates/[id]` | Profile review: each item next to its evidence; confirm or remove unverified items; source document and security flags; best matching jobs. |
-| `/assistant`, `/assistant/[id]` | Chat with the recruitment assistant; approve or decline the actions it proposes; optional blind mode. |
-| `/matches/[id]` | Score breakdown, mandatory criteria, explanation (fact-checked), interview questions. |
-| `/audit` | Audit log viewer: filter by record, action group or actor; page through older entries. |
-| `/privacy` | Candidate transparency notice (how AI is used, retention, rights), built from the live configuration. |
-
-The candidate page also has a **Privacy** card: talent-pool consent, a JSON export of all the candidate's data
-(`/candidates/[id]/export`), and erasure with a typed confirmation.
+| `/` | Dashboard: active jobs, applications, shortlisted, pending evaluations; applications trend; pipeline donut; open jobs; to-do queue; activity. |
+| `/jobs` | Jobs table: search, status and contract filters, sorting, pagination, row actions. "Create job" opens step 1 (paste the description; the AI extracts the requirements). |
+| `/jobs/[id]/requirements` | Steps 2–3: review and edit the extracted requirements (required/preferred skills, minimum-experience slider, education level, location, contract), with live validation, then **Validate & publish**. |
+| `/jobs/[id]` · `/pipeline` · `/weights` | Ranking, Kanban pipeline, scoring weights. |
+| `/candidates` | Candidates table: applied position, experience, skills, date, evaluation status, best match score; filters by job, skill, minimum experience, status and minimum score; upload dialog. |
+| `/candidates/[id]` | Tabs: Evaluation (scores per open job), Profile review (evidence), CV (PDF preview, security flags), Privacy. |
+| `/evaluations` | CV evaluation queue (applications in New or Screening), recent evaluations, profiles to verify. |
+| `/matches/[id]` | CV evaluation: score, coverage, strengths and gaps, AI summary, CV preview, recruiter decision and history. |
+| `/analytics` | Six charts with 7, 30 or 90-day and custom date ranges: applications over time, pipeline, funnel, top skills, applications per job, score distribution. |
+| `/assistant` | Chat with the recruitment assistant (actions need confirmation). |
+| `/audit`, `/settings`, `/privacy` | Audit log; preferences and read-only configuration; candidate notice. |
 
 ## Development
 

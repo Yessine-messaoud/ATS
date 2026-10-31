@@ -21,7 +21,7 @@ const CLOSED: Stage[] = ["rejected", "withdrawn"];
 const STAGE_DOT: Record<Stage, string> = {
   new: "bg-zinc-400",
   screening: "bg-sky-500",
-  interview: "bg-indigo-500",
+  interview: "bg-brand-500",
   offer: "bg-violet-500",
   hired: "bg-emerald-500",
   rejected: "bg-red-400",
@@ -66,7 +66,7 @@ export function Kanban({ applications, blind }: { applications: Application[]; b
         className={cx(
           "rounded-xl border-2 bg-zinc-100/70 p-2 transition-colors dark:bg-zinc-900/60",
           closed ? "min-h-24" : "min-h-56",
-          dragOver === stage ? "border-indigo-400 bg-indigo-50/60 dark:bg-indigo-950/30" : "border-transparent",
+          dragOver === stage ? "border-brand-400 bg-brand-50/60 dark:bg-brand-950/30" : "border-transparent",
         )}
       >
         <h3 className="mb-2 flex items-center justify-between px-1 text-xs font-semibold text-zinc-600 dark:text-zinc-300">
@@ -116,7 +116,7 @@ export function Kanban({ applications, blind }: { applications: Application[]; b
                 aria-label={`Move ${application.display_name} to stage`}
                 value={application.stage}
                 onChange={(e) => move(application.id, e.target.value as Stage)}
-                className="mt-2 w-full rounded-md border border-zinc-200 bg-zinc-50 px-1.5 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/40 dark:border-zinc-700 dark:bg-zinc-900"
+                className="mt-2 w-full rounded-md border border-zinc-200 bg-zinc-50 px-1.5 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500/40 dark:border-zinc-700 dark:bg-zinc-900"
               >
                 {STAGES.map((option) => (
                   <option key={option} value={option}>

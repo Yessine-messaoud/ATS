@@ -206,7 +206,7 @@ export function ProfileReview({ candidateId, initial }: { candidateId: string; i
       </div>
 
       {dirty && (
-        <div className="sticky bottom-4 z-20 flex flex-wrap items-center gap-3 rounded-xl border border-indigo-200 bg-white px-4 py-3 shadow-lg dark:border-indigo-900 dark:bg-zinc-900">
+        <div className="sticky bottom-4 z-20 flex flex-wrap items-center gap-3 rounded-xl border border-brand-200 bg-white px-4 py-3 shadow-lg dark:border-brand-900 dark:bg-zinc-900">
           <span className="text-sm font-medium">You have unsaved changes</span>
           <span className="hidden text-xs text-zinc-500 sm:inline">Corrections are kept as feedback to evaluate the extractor.</span>
           <div className="ml-auto flex gap-2">

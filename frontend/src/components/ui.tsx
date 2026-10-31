@@ -1,17 +1,19 @@
 import Link from "next/link";
 import type { ComponentProps, ReactNode } from "react";
 import { ChevronRight, Loader2 } from "lucide-react";
+import { twMerge } from "tailwind-merge";
 
+/** Join class names; later Tailwind utilities override conflicting earlier ones (e.g. `w-full` then `w-16`). */
 export function cx(...classes: (string | false | null | undefined)[]): string {
-  return classes.filter(Boolean).join(" ");
+  return twMerge(classes.filter(Boolean).join(" "));
 }
 
 /** Keyboard focus ring shared by every interactive element. */
 export const focusRing =
-  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-zinc-950";
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-zinc-950";
 
 const BUTTON_VARIANTS = {
-  primary: "bg-indigo-600 text-white shadow-sm hover:bg-indigo-500 dark:bg-indigo-500 dark:hover:bg-indigo-400",
+  primary: "bg-brand-600 text-white shadow-sm hover:bg-brand-500 dark:bg-brand-500 dark:hover:bg-brand-400",
   secondary:
     "border border-zinc-300 bg-white text-zinc-900 shadow-sm hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800",
   ghost: "text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800",
@@ -67,7 +69,7 @@ const TONES = {
   amber: "bg-amber-50 text-amber-800 ring-1 ring-amber-600/20 dark:bg-amber-950 dark:text-amber-300",
   red: "bg-red-50 text-red-700 ring-1 ring-red-600/20 dark:bg-red-950 dark:text-red-300",
   blue: "bg-sky-50 text-sky-700 ring-1 ring-sky-600/20 dark:bg-sky-950 dark:text-sky-300",
-  indigo: "bg-indigo-50 text-indigo-700 ring-1 ring-indigo-600/20 dark:bg-indigo-950 dark:text-indigo-300",
+  indigo: "bg-brand-50 text-brand-700 ring-1 ring-brand-600/20 dark:bg-brand-950 dark:text-brand-300",
 };
 export type Tone = keyof typeof TONES;
 
@@ -111,7 +113,7 @@ export function Card({
   return (
     <section
       className={cx(
-        "rounded-xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900",
+        "rounded-xl border border-zinc-200/80 bg-white shadow-[0_1px_2px_rgba(16,24,64,0.04),0_1px_3px_rgba(16,24,64,0.06)] dark:border-zinc-800 dark:bg-zinc-900",
         className,
       )}
     >
@@ -231,7 +233,7 @@ export function Stat({
   const className =
     "block rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900";
   return href ? (
-    <Link href={href} className={cx(className, "transition-colors hover:border-indigo-300 dark:hover:border-indigo-700", focusRing)}>
+    <Link href={href} className={cx(className, "transition-colors hover:border-brand-300 dark:hover:border-brand-700", focusRing)}>
       {body}
     </Link>
   ) : (
@@ -298,9 +300,100 @@ export function Kbd({ children }: { children: ReactNode }) {
 
 export const inputClass = cx(
   "w-full rounded-md border border-zinc-300 bg-white px-2.5 py-1.5 text-sm shadow-sm placeholder:text-zinc-400 dark:border-zinc-700 dark:bg-zinc-950",
-  "focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30",
+  "focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30",
 );
 
 export const tableClass = "w-full text-sm";
 export const theadClass =
   "border-b border-zinc-200 bg-zinc-50 text-left text-xs font-medium text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900/60";
+
+/** Hover/focus tooltip for icons and short hints (the text is also exposed to assistive technology). */
+export function Tooltip({ content, children, side = "top" }: { content: string; children: ReactNode; side?: "top" | "bottom" }) {
+  return (
+    <span className="group/tip relative inline-flex">
+      {children}
+      <span
+        role="tooltip"
+        className={cx(
+          "pointer-events-none absolute left-1/2 z-50 w-max max-w-64 -translate-x-1/2 rounded-md bg-navy-950 px-2 py-1 text-xs font-normal leading-snug text-white opacity-0 shadow-lg transition-opacity group-focus-within/tip:opacity-100 group-hover/tip:opacity-100",
+          side === "top" ? "bottom-full mb-1.5" : "top-full mt-1.5",
+        )}
+      >
+        {content}
+      </span>
+    </span>
+  );
+}
+
+/** Horizontal criterion bar (0–1) with label and value. */
+export function ProgressBar({ label, value, detail }: { label: string; value: number; detail?: ReactNode }) {
+  const percent = Math.round(Math.max(0, Math.min(1, value)) * 100);
+  return (
+    <div>
+      <div className="flex items-baseline justify-between gap-2 text-sm">
+        <span className="font-medium">{label}</span>
+        <span className="tabular-nums text-zinc-500">{percent}%</span>
+      </div>
+      <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800" role="meter" aria-label={label} aria-valuenow={percent} aria-valuemin={0} aria-valuemax={100}>
+        <div className={cx("h-full rounded-full transition-all", scoreTone(percent))} style={{ width: `${percent}%` }} />
+      </div>
+      {detail && <p className="mt-1 text-xs text-zinc-500">{detail}</p>}
+    </div>
+  );
+}
+
+export type JobStatus = "validated" | "pending" | "draft" | "closed";
+
+export const JOB_STATUS: Record<JobStatus, { label: string; dot: string; badge: string }> = {
+  validated: {
+    label: "Validated",
+    dot: "bg-emerald-500",
+    badge: "bg-emerald-50 text-emerald-700 ring-emerald-600/20 dark:bg-emerald-950 dark:text-emerald-300",
+  },
+  pending: {
+    label: "Pending validation",
+    dot: "bg-amber-500",
+    badge: "bg-amber-50 text-amber-800 ring-amber-600/20 dark:bg-amber-950 dark:text-amber-300",
+  },
+  draft: {
+    label: "Draft",
+    dot: "bg-zinc-400",
+    badge: "bg-zinc-100 text-zinc-600 ring-zinc-500/20 dark:bg-zinc-800 dark:text-zinc-300",
+  },
+  closed: {
+    label: "Closed",
+    dot: "bg-zinc-500",
+    badge: "bg-zinc-100 text-zinc-500 ring-zinc-500/20 dark:bg-zinc-800 dark:text-zinc-400",
+  },
+};
+
+/**
+ * The backend knows a job's open/closed status and whether its requirements are validated. "Draft" has no
+ * backend equivalent yet, so no job is ever shown as a draft.
+ */
+export function jobStatus(job: { status: string; requirements_validated: boolean }): JobStatus {
+  if (job.status !== "open") return "closed";
+  return job.requirements_validated ? "validated" : "pending";
+}
+
+export function JobStatusBadge({ status }: { status: JobStatus }) {
+  const style = JOB_STATUS[status];
+  return (
+    <span className={cx("inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-medium ring-1", style.badge)}>
+      <span className={cx("size-1.5 rounded-full", style.dot)} aria-hidden />
+      {style.label}
+    </span>
+  );
+}
+
+export const selectClass = cx(inputClass, "cursor-pointer pr-8");
+
+export function Field({ label, hint, children, className }: { label: string; hint?: string; children: ReactNode; className?: string }) {
+  return (
+    <label className={cx("block text-xs", className)}>
+      <span className="mb-1 flex items-center gap-1 font-medium text-zinc-600 dark:text-zinc-300">{label}</span>
+      {children}
+      {hint && <span className="mt-1 block text-[11px] text-zinc-500">{hint}</span>}
+    </label>
+  );
+}

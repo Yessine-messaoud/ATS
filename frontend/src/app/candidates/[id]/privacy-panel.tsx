@@ -35,7 +35,7 @@ export function PrivacyPanel({
     <Card
       title="Privacy"
       actions={
-        <Link href={`/audit?entity_id=${candidateId}`} className="flex items-center gap-1 text-xs font-medium text-indigo-600 hover:underline dark:text-indigo-400">
+        <Link href={`/audit?entity_id=${candidateId}`} className="flex items-center gap-1 text-xs font-medium text-brand-600 hover:underline dark:text-brand-400">
           <ShieldCheck className="size-3.5" aria-hidden /> Audit trail
         </Link>
       }
@@ -75,7 +75,7 @@ export function PrivacyPanel({
         <div className="flex flex-wrap gap-2">
           <a
             href={`/candidates/${candidateId}/export`}
-            className="flex items-center gap-1 text-xs font-medium text-indigo-600 hover:underline dark:text-indigo-400"
+            className="flex items-center gap-1 text-xs font-medium text-brand-600 hover:underline dark:text-brand-400"
           >
             <Download className="size-3.5" aria-hidden /> Export all data (JSON)
           </a>

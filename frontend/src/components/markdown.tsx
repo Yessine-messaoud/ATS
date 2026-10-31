@@ -13,7 +13,7 @@ export function Markdown({ children }: { children: string }) {
         h1: (props) => <h3 className="mb-1 mt-3 font-semibold" {...props} />,
         h2: (props) => <h3 className="mb-1 mt-3 font-semibold" {...props} />,
         h3: (props) => <h3 className="mb-1 mt-3 font-semibold" {...props} />,
-        a: (props) => <a className="text-indigo-600 underline dark:text-indigo-400" target="_blank" rel="noreferrer" {...props} />,
+        a: (props) => <a className="text-brand-600 underline dark:text-brand-400" target="_blank" rel="noreferrer" {...props} />,
         code: (props) => <code className="rounded bg-zinc-100 px-1 py-0.5 font-mono text-xs dark:bg-zinc-800" {...props} />,
         pre: (props) => <pre className="my-2 overflow-x-auto rounded-lg bg-zinc-100 p-3 text-xs dark:bg-zinc-800" {...props} />,
         blockquote: (props) => <blockquote className="my-2 border-l-2 border-zinc-300 pl-3 text-zinc-600 dark:border-zinc-700 dark:text-zinc-400" {...props} />,

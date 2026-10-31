@@ -82,7 +82,7 @@ export default async function AuditPage(props: PageProps<"/audit">) {
         {entries.length === 0 ? (
           <Empty icon={<ShieldCheck />} title="No entries match">Change the filters or reset them.</Empty>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="relative overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="text-left text-xs text-zinc-500">
                 <tr>

@@ -88,3 +88,13 @@ export const api = {
     return read<AuditEntry[]>(`/api/audit?${query}`);
   },
 };
+
+/** Jobs, candidates and every job's applications (and, on demand, the open jobs' rankings) for dashboards. */
+export async function loadWorkspace({ rankings = false }: { rankings?: boolean } = {}) {
+  const [jobs, candidates] = await Promise.all([api.jobs(), api.candidates()]);
+  const [applications, rankingList] = await Promise.all([
+    Promise.all(jobs.map((job) => api.applications(job.id, false))).then((lists) => lists.flat()),
+    rankings ? Promise.all(jobs.filter((job) => job.status === "open").map((job) => api.ranking(job.id, false))) : [],
+  ]);
+  return { jobs, candidates, applications, rankings: rankingList };
+}

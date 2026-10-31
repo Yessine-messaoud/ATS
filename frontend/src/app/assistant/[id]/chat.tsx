@@ -37,7 +37,7 @@ function Thinking() {
     <div role="status" className="flex items-center gap-2 text-xs text-zinc-500">
       <span className="flex gap-1" aria-hidden>
         {[0, 150, 300].map((delay) => (
-          <span key={delay} className="size-1.5 animate-bounce rounded-full bg-indigo-400" style={{ animationDelay: `${delay}ms` }} />
+          <span key={delay} className="size-1.5 animate-bounce rounded-full bg-brand-400" style={{ animationDelay: `${delay}ms` }} />
         ))}
       </span>
       Working… {seconds}s
@@ -120,7 +120,7 @@ export function Chat({ initial, firstPrompt }: { initial: Conversation; firstPro
       <div className="space-y-4 pb-4">
         {items.length === 0 && !sent && (
           <div className="rounded-xl border border-dashed border-zinc-300 p-8 text-center text-sm text-zinc-500 dark:border-zinc-700">
-            <Sparkles className="mx-auto mb-2 size-5 text-indigo-500" aria-hidden />
+            <Sparkles className="mx-auto mb-2 size-5 text-brand-500" aria-hidden />
             Ask a question to get started.
           </div>
         )}
@@ -135,13 +135,13 @@ export function Chat({ initial, firstPrompt }: { initial: Conversation; firstPro
             </p>
           ) : item.role === "user" ? (
             <div key={index} className="flex justify-end">
-              <div className="max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-br-md bg-indigo-600 px-4 py-2 text-sm text-white">
+              <div className="max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-br-md bg-brand-600 px-4 py-2 text-sm text-white">
                 {item.text}
               </div>
             </div>
           ) : (
             <div key={index} className="flex gap-3">
-              <span className="mt-1 flex size-7 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-indigo-600 dark:bg-indigo-950 dark:text-indigo-300">
+              <span className="mt-1 flex size-7 shrink-0 items-center justify-center rounded-full bg-brand-50 text-brand-600 dark:bg-brand-950 dark:text-brand-300">
                 <Sparkles className="size-3.5" aria-hidden />
               </span>
               <div className="min-w-0 flex-1 rounded-2xl rounded-tl-md border border-zinc-200 bg-white px-4 py-3 text-sm shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
@@ -152,7 +152,7 @@ export function Chat({ initial, firstPrompt }: { initial: Conversation; firstPro
         )}
         {sent && (
           <div className="flex justify-end">
-            <div className="max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-br-md bg-indigo-600/80 px-4 py-2 text-sm text-white">{sent}</div>
+            <div className="max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-br-md bg-brand-600/80 px-4 py-2 text-sm text-white">{sent}</div>
           </div>
         )}
         {pending && <Thinking />}
@@ -237,7 +237,7 @@ export function Chat({ initial, firstPrompt }: { initial: Conversation; firstPro
           disabled={pending || !draft.trim()}
           aria-label="Send"
           className={cx(
-            "flex size-9 shrink-0 items-center justify-center rounded-xl bg-indigo-600 text-white transition hover:bg-indigo-500 disabled:opacity-40",
+            "flex size-9 shrink-0 items-center justify-center rounded-xl bg-brand-600 text-white transition hover:bg-brand-500 disabled:opacity-40",
           )}
         >
           <ArrowUp className="size-4" />

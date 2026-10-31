@@ -13,7 +13,7 @@ export function BlindToggle({ href, blind }: { href: string; blind: boolean }) {
       className={cx(
         "inline-flex items-center gap-2 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors",
         blind
-          ? "border-indigo-600 bg-indigo-600 text-white dark:border-indigo-400 dark:bg-indigo-500"
+          ? "border-brand-600 bg-brand-600 text-white dark:border-brand-400 dark:bg-brand-500"
           : "border-zinc-300 text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800",
         focusRing,
       )}

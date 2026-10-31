@@ -19,6 +19,7 @@ import {
   type Stage,
   type Weights,
 } from "@/lib/api";
+import { tasks, type Task } from "@/lib/insights";
 
 export type ActionState = { error?: string; ok?: string } | null;
 
@@ -231,4 +232,11 @@ export async function searchEverything(query: string): Promise<SearchHit[]> {
       href: `/candidates/${candidate.id}`,
     }));
   return [...jobHits.slice(0, 6), ...candidateHits.slice(0, 8)];
+}
+
+/** Notification centre: the same to-do items as the dashboard, loaded when the bell is opened. */
+export async function getNotifications(): Promise<Task[]> {
+  const [jobs, candidates] = await Promise.all([request<Job[]>("/api/jobs"), request<Candidate[]>("/api/candidates?limit=200")]);
+  const applications = (await Promise.all(jobs.map((job) => request<Application[]>(`/api/jobs/${job.id}/applications`)))).flat();
+  return tasks(jobs, candidates, applications);
 }

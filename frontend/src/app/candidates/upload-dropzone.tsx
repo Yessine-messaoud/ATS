@@ -60,12 +60,12 @@ export function UploadDropzone() {
         className={cx(
           "flex w-full flex-col items-center gap-2 rounded-xl border-2 border-dashed px-4 py-8 text-sm transition-colors",
           dragging
-            ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-950/40"
-            : "border-zinc-300 hover:border-indigo-400 hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-800/50",
+            ? "border-brand-500 bg-brand-50 dark:bg-brand-950/40"
+            : "border-zinc-300 hover:border-brand-400 hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-800/50",
           focusRing,
         )}
       >
-        <UploadCloud className={cx("size-8", dragging ? "text-indigo-600" : "text-zinc-400")} aria-hidden />
+        <UploadCloud className={cx("size-8", dragging ? "text-brand-600" : "text-zinc-400")} aria-hidden />
         <span className="font-medium">Drop CVs here, or click to choose files</span>
         <span className="text-xs text-zinc-500">PDF, DOCX, text or .eml application emails · up to 10 MB each · several at once</span>
       </button>
@@ -95,7 +95,7 @@ export function UploadDropzone() {
               ) : item.status === "error" ? (
                 <XCircle className="mt-0.5 size-4 shrink-0 text-red-600" aria-hidden />
               ) : item.status === "uploading" ? (
-                <Loader2 className="mt-0.5 size-4 shrink-0 animate-spin text-indigo-600" aria-hidden />
+                <Loader2 className="mt-0.5 size-4 shrink-0 animate-spin text-brand-600" aria-hidden />
               ) : (
                 <FileText className="mt-0.5 size-4 shrink-0 text-zinc-400" aria-hidden />
               )}
@@ -109,7 +109,7 @@ export function UploadDropzone() {
                 {item.result?.ok === false && <p className="mt-0.5 text-xs text-red-600">{item.result.error}</p>}
                 {item.result?.ok && (
                   <div className="mt-1 flex flex-wrap items-center gap-1 text-xs">
-                    <Link href={`/candidates/${item.result.id}`} className="font-medium text-indigo-600 hover:underline dark:text-indigo-400">
+                    <Link href={`/candidates/${item.result.id}`} className="font-medium text-brand-600 hover:underline dark:text-brand-400">
                       Review {item.result.name} →
                     </Link>
                     {item.result.flags.map((flag) => (

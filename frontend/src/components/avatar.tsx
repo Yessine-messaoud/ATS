@@ -3,7 +3,7 @@ import { initials } from "@/lib/format";
 import { cx } from "./ui";
 
 const COLORS = [
-  "bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300",
+  "bg-brand-100 text-brand-700 dark:bg-brand-950 dark:text-brand-300",
   "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300",
   "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300",
   "bg-sky-100 text-sky-700 dark:bg-sky-950 dark:text-sky-300",
