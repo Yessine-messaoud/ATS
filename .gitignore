@@ -35,3 +35,7 @@ Thumbs.db
 .ruff_cache/
 .coverage
 htmlcov/
+
+# Third-party datasets (personal data, licence of the source): never committed. See docs/README.md.
+/data/
+/docs/Resume.csv
